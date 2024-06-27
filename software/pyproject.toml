@@ -1,12 +1,13 @@
 [tool.poetry]
 name = "software"
-version = "3"
+version = "4"
 description = ""
 authors = ["Moritz Makowski <moritz.makowski@tum.de>", "Patrick Aigner <patrick.aigner@tum.de>"]
 readme = "README.md"
+package-mode=false
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.12.4"
 paho-mqtt = "^1.6.1"
 psutil = "^5.9.3"
 pyserial = "^3.5"

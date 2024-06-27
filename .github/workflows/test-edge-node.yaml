@@ -20,14 +20,14 @@ jobs:
       run:
         working-directory: software
     steps:
-      # check-out repo and install python 3.9.16
+      # check-out repo and install python 3.12.4
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Set up Python 3.9.16
+      - name: Set up Python 3.12.4
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9.16"
+          python-version: "3.12.4"
 
       # load cached venv if cache exists
       - name: Load cached venv
@@ -35,14 +35,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: software/.venv
-          key: venv-${{ runner.os }}-3.9.16-${{ hashFiles('software/poetry.lock') }}
+          key: venv-${{ runner.os }}-3.12.4-${{ hashFiles('software/poetry.lock') }}
 
       # install poetry if venv not in cache
       - name: Install Poetry
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         uses: snok/install-poetry@v1
         with:
-          version: 1.8.2
+          version: 1.8.3
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
