@@ -39,9 +39,6 @@ types-pytz = "^2022.6.0.1"
 types-filelock = "^3.2.7"
 matplotlib = "^3.6.3"
 notebook = "^6.5.2"
-pendulum = "^2.1.2"
-asyncpg = "^0.27.0"
-deptry = "^0.16.1"
 
 
 [tool.poetry.group.deb.dependencies]
