@@ -8,7 +8,9 @@ import deepdiff
 from ..pytest_utils import expect_log_file_contents, wait_for_condition
 
 PROJECT_DIR = dirname(dirname(dirname(abspath(__file__))))
-LOG_FILE = join(PROJECT_DIR, "logs", "archive", datetime.now().strftime("%Y-%m-%d.log"))
+LOG_FILE = join(
+    PROJECT_DIR, "logs", "archive", datetime.now().strftime("%Y-%m-%d.log")
+)
 CONFIG_PATH = join(PROJECT_DIR, "config", "config.json")
 sys.path.append(PROJECT_DIR)
 
@@ -21,7 +23,12 @@ from src import custom_types, utils, procedures
 @pytest.mark.version_update
 @pytest.mark.github_action
 @pytest.mark.last
-def test_mqtt_receiving() -> None:
+def test_mqtt_receiving(
+    mqtt_client_environment: None,
+    mqtt_data_files: None,
+    log_files: None,
+    sample_config: None,
+) -> None:
     # -------------------------------------------------------------------------
     # 1. PUBLISH RETAINED CONFIG MESSAGE
 

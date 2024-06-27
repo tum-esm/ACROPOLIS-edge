@@ -120,10 +120,10 @@ def mqtt_client_environment() -> Any:
     dotenv.load_dotenv(join(PROJECT_DIR, "config", ".env.testing"))
 
     timestamp = round(time.time())
-    os.environ["THINGSBOARD_MQTT_IDENTIFIER"] = "".join(
+    os.environ["HERMES_MQTT_IDENTIFIER"] = "".join(
         random.choices([chr(a) for a in range(ord("a"), ord("z") + 1)], k=20)
     )
-    os.environ["THINGSBOARD_MQTT_BASE_TOPIC"] = f"development/test-{timestamp}/"
+    os.environ["HERMES_MQTT_BASE_TOPIC"] = f"development/test-{timestamp}/"
 
     yield
 
@@ -160,7 +160,12 @@ def mqtt_data_files() -> Any:
 
 
 @pytest.fixture(scope="function")
-def messaging_agent_with_sending() -> Any:
+def messaging_agent_with_sending(
+    log_files: None,
+    mqtt_client_environment: None,
+    mqtt_data_files: None,
+    sample_config: None,
+) -> Any:
     """start and stop the background processing of messages"""
 
     config = utils.ConfigInterface.read()
@@ -176,7 +181,12 @@ def messaging_agent_with_sending() -> Any:
 
 
 @pytest.fixture(scope="function")
-def messaging_agent_without_sending() -> Any:
+def messaging_agent_without_sending(
+    log_files: None,
+    mqtt_client_environment: None,
+    mqtt_data_files: None,
+    sample_config: None,
+) -> Any:
     """start and stop the background processing of messages"""
 
     config = utils.ConfigInterface.read()
