@@ -26,14 +26,14 @@ MESSAGE_ARCHIVE_FILE = join(
 @pytest.mark.remote_update
 @pytest.mark.version_update
 @pytest.mark.github_action
-def test_message_sending_without_sending(messaging_agent_without_sending: None) -> None:
+def test_message_sending_without_sending() -> None:
     _test_message_sending(mqtt_communication_enabled=False)
 
 
 @pytest.mark.remote_update
 @pytest.mark.version_update
 @pytest.mark.github_action
-def test_message_sending_with_sending(messaging_agent_with_sending: None) -> None:
+def test_message_sending_with_sending() -> None:
     _test_message_sending(mqtt_communication_enabled=True)
 
 
@@ -56,25 +56,22 @@ def _test_message_sending(mqtt_communication_enabled: bool) -> None:
 
     # enqueue dummy message
     dummy_data_message_body = custom_types.MQTTMeasurementMessageBody(
-                    revision=1,
-                    timestamp=round(time.time(), 2),
-                    value=custom_types.MQTTMeasurementData(
-                        gmp343_raw=0.0,
-                        gmp343_compensated=0.0,
-                        gmp343_filtered=0.0,
-                        bme280_temperature=0.0,
-                        bme280_humidity=0.0,
-                        bme280_pressure=0.0,
-                        sht45_temperature=0.0,
-                        sht45_humidity=0.0,
-                        gmp343_temperature=0.0,
-                    )
-                )
-    
-    message_queue.enqueue_message(
-                config,
-                dummy_data_message_body
-            )
+        revision=1,
+        timestamp=round(time.time(), 2),
+        value=custom_types.MQTTMeasurementData(
+            gmp343_raw=0.0,
+            gmp343_compensated=0.0,
+            gmp343_filtered=0.0,
+            bme280_temperature=0.0,
+            bme280_humidity=0.0,
+            bme280_pressure=0.0,
+            sht45_temperature=0.0,
+            sht45_humidity=0.0,
+            gmp343_temperature=0.0,
+        ),
+    )
+
+    message_queue.enqueue_message(config, dummy_data_message_body)
 
     # assert dummy message to be in active queue
     records = (
