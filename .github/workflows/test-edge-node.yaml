@@ -57,7 +57,7 @@ jobs:
           ./scripts/check_static_types.sh
       - name: Run ci-pytests
         env:
-          THINGSBOARD_MQTT_URL: ${{ secrets.THINGSBOARD_URL }}
+          THINGSBOARD_MQTT_URL: ${{ secrets.THINGSBOARD_MQTT_URL }}
           THINGSBOARD_PORT: ${{ secrets.THINGSBOARD_PORT }}
           THINGSBOARD_USERNAME: ${{ secrets.THINGSBOARD_USERNAME }}
           THINGSBOARD_PASSWORD: ${{ secrets.THINGSBOARD_PASSWORD }}
