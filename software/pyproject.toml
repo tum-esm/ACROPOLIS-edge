@@ -52,10 +52,9 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 markers = [
-    "ci: can be run in GitHub CI",
-    "integration: can only be run on a configured system",
-    "version_update: required to pass when updating the version",
-    "parameter_update: required to pass when updating the config only",
+    "github_action: runs on commits to main and pull requests",
+    "version_update: legacy mark, same as remote_update",
+    "remote_update: required to pass when updating software on edge node",
     "last: provided by the `pytest-ordering` library"
 ]
 
