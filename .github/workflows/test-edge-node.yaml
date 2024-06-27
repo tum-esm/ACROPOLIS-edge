@@ -57,10 +57,10 @@ jobs:
           ./scripts/check_static_types.sh
       - name: Run ci-pytests
         env:
-          ACROPOLIS_MQTT_URL: ${{ secrets.ACROPOLIS_MQTT_URL }}
-          ACROPOLIS_MQTT_PORT: ${{ secrets.ACROPOLIS_MQTT_PORT }}
-          ACROPOLIS_MQTT_USERNAME: ${{ secrets.ACROPOLIS_MQTT_USERNAME }}
-          ACROPOLIS_MQTT_PASSWORD: ${{ secrets.ACROPOLIS_MQTT_PASSWORD }}
+          THINGSBOARD_MQTT_URL: ${{ secrets.THINGSBOARD_URL }}
+          THINGSBOARD_PORT: ${{ secrets.THINGSBOARD_PORT }}
+          THINGSBOARD_USERNAME: ${{ secrets.THINGSBOARD_USERNAME }}
+          THINGSBOARD_PASSWORD: ${{ secrets.THINGSBOARD_PASSWORD }}
         run: |
           source .venv/bin/activate
           pytest -m "github_action" --cov=src --cov=cli tests/
