@@ -117,7 +117,7 @@ def mqtt_client_environment() -> Any:
     and generate a dummy base-topic path"""
 
     dotenv.load_dotenv(join(PROJECT_DIR, "config", ".env"))
-    dotenv.load_dotenv(join(PROJECT_DIR, "config", ".env.template"))
+    dotenv.load_dotenv(join(PROJECT_DIR, "config", ".env.testing"))
 
     timestamp = round(time.time())
     os.environ["THINGSBOARD_MQTT_IDENTIFIER"] = "".join(

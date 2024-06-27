@@ -19,8 +19,8 @@ def test_mqtt_connection(mqtt_client_environment: None) -> None:
     mqtt_client = mqtt_connection.client
 
     # testing setup
-    assert mqtt_config.station_identifier == os.environ["HERMES_MQTT_IDENTIFIER"]
-    assert mqtt_config.mqtt_base_topic == os.environ["HERMES_MQTT_BASE_TOPIC"]
+    assert mqtt_config.station_identifier == os.environ["THINGSBOARD_MQTT_IDENTIFIER"]
+    assert mqtt_config.mqtt_base_topic == os.environ["THINGSBOARD_MQTT_BASE_TOPIC"]
     assert mqtt_client.is_connected(), "mqtt client is not connected"
 
     # test message sending

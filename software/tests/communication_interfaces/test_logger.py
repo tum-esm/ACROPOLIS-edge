@@ -107,9 +107,9 @@ def _test_logger(mqtt_communication_enabled: bool) -> None:
     )
     EXPECTED_MQTT_TOPIC = (
         (
-            os.environ["HERMES_MQTT_BASE_TOPIC"]
+            os.environ["THINGSBOARD_MQTT_BASE_TOPIC"]
             + "log-messages/"
-            + os.environ["HERMES_MQTT_IDENTIFIER"]
+            + os.environ["THINGSBOARD_MQTT_IDENTIFIER"]
         )
         if mqtt_communication_enabled
         else None
