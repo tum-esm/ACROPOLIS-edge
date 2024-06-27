@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "edgenode"
+name = "software"
 version = "3"
 description = ""
 authors = ["Moritz Makowski <moritz.makowski@tum.de>", "Patrick Aigner <patrick.aigner@tum.de>"]
