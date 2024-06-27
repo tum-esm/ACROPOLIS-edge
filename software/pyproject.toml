@@ -55,6 +55,7 @@ markers = [
     "github_action: runs on commits to main and pull requests",
     "version_update: legacy mark, same as remote_update",
     "remote_update: required to pass when updating software on edge node",
+    "hardware_interface: runs locally on edge node, toggled by config",
     "last: provided by the `pytest-ordering` library"
 ]
 
