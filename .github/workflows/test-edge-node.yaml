@@ -58,9 +58,9 @@ jobs:
       - name: Run ci-pytests
         env:
           THINGSBOARD_MQTT_URL: ${{ secrets.THINGSBOARD_MQTT_URL }}
-          THINGSBOARD_PORT: ${{ secrets.THINGSBOARD_PORT }}
-          THINGSBOARD_USERNAME: ${{ secrets.THINGSBOARD_USERNAME }}
-          THINGSBOARD_PASSWORD: ${{ secrets.THINGSBOARD_PASSWORD }}
+          THINGSBOARD_MQTT_PORT: ${{ secrets.THINGSBOARD_MQTT_PORT }}
+          THINGSBOARD_MQTT_USERNAME: ${{ secrets.THINGSBOARD_MQTT_USERNAME }}
+          THINGSBOARD_MQTT_PASSWORD: ${{ secrets.THINGSBOARD_MQTT_PASSWORD }}
         run: |
           source .venv/bin/activate
           pytest -m "github_action" --cov=src --cov=cli tests/
