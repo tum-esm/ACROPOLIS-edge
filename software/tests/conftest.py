@@ -117,13 +117,13 @@ def mqtt_client_environment() -> Any:
     and generate a dummy base-topic path"""
 
     dotenv.load_dotenv(join(PROJECT_DIR, "config", ".env"))
-    dotenv.load_dotenv(join(PROJECT_DIR, "config", ".env.testing"))
+    dotenv.load_dotenv(join(PROJECT_DIR, "config", ".env.template"))
 
     timestamp = round(time.time())
-    os.environ["HERMES_MQTT_IDENTIFIER"] = "".join(
+    os.environ["THINGSBOARD_MQTT_IDENTIFIER"] = "".join(
         random.choices([chr(a) for a in range(ord("a"), ord("z") + 1)], k=20)
     )
-    os.environ["HERMES_MQTT_BASE_TOPIC"] = f"development/test-{timestamp}/"
+    os.environ["THINGSBOARD_MQTT_BASE_TOPIC"] = f"development/test-{timestamp}/"
 
     yield
 
