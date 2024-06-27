@@ -160,12 +160,7 @@ def mqtt_data_files() -> Any:
 
 
 @pytest.fixture(scope="function")
-def messaging_agent_with_sending(
-    log_files: None,
-    mqtt_client_environment: None,
-    mqtt_data_files: None,
-    sample_config: None,
-) -> Any:
+def messaging_agent_with_sending() -> Any:
     """start and stop the background processing of messages"""
 
     config = utils.ConfigInterface.read()
@@ -181,12 +176,7 @@ def messaging_agent_with_sending(
 
 
 @pytest.fixture(scope="function")
-def messaging_agent_without_sending(
-    log_files: None,
-    mqtt_client_environment: None,
-    mqtt_data_files: None,
-    sample_config: None,
-) -> Any:
+def messaging_agent_without_sending() -> Any:
     """start and stop the background processing of messages"""
 
     config = utils.ConfigInterface.read()
