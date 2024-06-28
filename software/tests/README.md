@@ -11,7 +11,6 @@
 - The Pytest mark `hardware_interface` can be skipped via the config parameter `run_hardware_tests`
 - The Pytest mark `remote_update` is run after every config update
 - The Pytest mark `github_action` is run for commits within a pull request or the main branch
-- The Pytest mark `version_update` is a legacy name and will be removed in future versions
 
 **Run tests/check static types:**
 

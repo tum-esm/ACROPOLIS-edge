@@ -10,7 +10,6 @@ CLI_PATH = os.path.join(PROJECT_DIR, "cli", "main.py")
 
 
 @pytest.mark.remote_update
-@pytest.mark.version_update
 def test_cli_startup() -> None:
     """run the edge-cli info command"""
     stdout = utils.run_shell_command(

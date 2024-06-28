@@ -20,7 +20,6 @@ from src import custom_types, utils, procedures
 
 
 @pytest.mark.remote_update
-@pytest.mark.version_update
 @pytest.mark.github_action
 @pytest.mark.last
 def test_mqtt_receiving(
