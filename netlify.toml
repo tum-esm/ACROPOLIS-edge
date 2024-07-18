@@ -1,4 +1,0 @@
-[build]
-  base = "/dashboard"
-  command = "yarn build"
-  publish = "out"

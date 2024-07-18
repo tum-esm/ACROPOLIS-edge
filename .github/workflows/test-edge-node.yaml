@@ -1,0 +1,66 @@
+name: "test-edge-node"
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "software/**"
+      - ".github/workflows/test-edge-node.yaml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "software/**"
+      - ".github/workflows/test-edge-node.yaml"
+
+jobs:
+  test-edge-node-codebase:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: software
+    steps:
+      # check-out repo and install python 3.12.4
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python 3.12.4
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12.4"
+
+      # load cached venv if cache exists
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: software/.venv
+          key: venv-${{ runner.os }}-3.12.4-${{ hashFiles('software/poetry.lock') }}
+
+      # install poetry if venv not in cache
+      - name: Install Poetry
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.3
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --with=dev
+
+      # run test suite
+      - name: Run static type analysis
+        run: |
+          source .venv/bin/activate
+          ./scripts/check_static_types.sh
+      - name: Run ci-pytests
+        env:
+          THINGSBOARD_MQTT_URL: ${{ secrets.THINGSBOARD_MQTT_URL }}
+          THINGSBOARD_MQTT_PORT: ${{ secrets.THINGSBOARD_MQTT_PORT }}
+          THINGSBOARD_MQTT_USERNAME: ${{ secrets.THINGSBOARD_MQTT_USERNAME }}
+          THINGSBOARD_MQTT_PASSWORD: ${{ secrets.THINGSBOARD_MQTT_PASSWORD }}
+        run: |
+          source .venv/bin/activate
+          pytest -m "github_action" --cov=src --cov=cli tests/
