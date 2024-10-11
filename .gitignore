@@ -403,3 +403,7 @@ $RECYCLE.BIN/
 # JetBrains IDEs
 .idea
 
+
+tb_access_token
+
+*.db
