@@ -30,7 +30,6 @@ class SqliteConnection:
     def execute(self, query):
         cursor = self.conn.cursor()
         cursor.execute(query)
-        cursor.execute("PRAGMA wal_checkpoint(PASSIVE);")
         return cursor.fetchall()
 
     def close(self):
