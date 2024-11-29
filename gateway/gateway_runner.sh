@@ -3,6 +3,8 @@
 # Expect the host filesystem to be mounted at /host
 chroot /host
 
+cd $ACROPOLIS_GATEWAY_DIR
+
 echo "Removing old virtual environment and creating a new one"
 rm -rf .venv
 python3.12 -m venv --copies .venv
