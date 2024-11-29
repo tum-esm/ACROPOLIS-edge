@@ -36,7 +36,7 @@ class GatewayDockerClient:
                 if container.name == "acropolis_edge":
                     version = container.attrs["Config"]["Image"].split("-")[-1]
                     if version.__len__() > 0 and (
-                            version[0] == "v" or version.length == 40
+                            version[0] == "v" or version.__len__() == 40
                     ):
                         return version
 
