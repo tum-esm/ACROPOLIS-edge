@@ -112,6 +112,10 @@ class GatewayDockerClient:
                     "bind": "/bin/uptime",
                     "mode": "ro"
                 },
+                "/bin/pigs": {
+                    "bind": "/bin/pigs",
+                    "mode": "ro"
+                },
                 ACROPOLIS_COMMUNICATION_DATA_PATH: {
                     "bind": "/root/data",
                     "mode": "rw"

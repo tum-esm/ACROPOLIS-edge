@@ -100,7 +100,7 @@ try:
                 message = communication_sqlite_db.execute(
                     f"SELECT * FROM {sqlite.SqliteTables.QUEUE_OUT.value} ORDER BY id LIMIT 1")
                 if len(message) > 0:
-                    print("Sending message: " + str(message[0]))
+                    print('Sending message: ' + str(message[0]))
                     mqtt_client.publish_message(message[0][2])
                     communication_sqlite_db.execute(f"DELETE FROM {sqlite.SqliteTables.QUEUE_OUT.value} WHERE id = {message[0][0]}")
                 continue
