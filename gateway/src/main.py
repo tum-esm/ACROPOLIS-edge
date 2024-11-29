@@ -51,6 +51,7 @@ try:
         docker_client = docker_client.GatewayDockerClient()
         git_client = git_client.GatewayGitClient()
         args = parse_args()
+        print(f"Args: {args}")
         access_token = self_provisioning_get_access_token(args)
 
         archive_sqlite_db = sqlite.SqliteConnection("archive.db")
