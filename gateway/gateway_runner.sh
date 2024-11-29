@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Expect the host filesystem to be mounted at /host
-chroot /host
+chroot /host /bin/bash <<"EOT"
 
 cd $ACROPOLIS_GATEWAY_DIR
 
