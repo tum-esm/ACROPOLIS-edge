@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Arguments: $@"
+
 # Expect the host filesystem to be mounted at /host
 chroot /host /bin/bash <<"EOT"
 
