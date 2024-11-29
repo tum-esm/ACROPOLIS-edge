@@ -18,4 +18,4 @@ pip install -r requirements.txt
 
 echo "Running the gateway"
 echo "Args: $args"
-python -u src/main.py "$args"
+python -u src/main.py $args
