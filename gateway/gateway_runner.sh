@@ -14,4 +14,4 @@ echo "Installing dependencies in the virtual environment"
 pip install -r requirements.txt
 
 echo "Running the gateway"
-python src/main.py $@
+python src/main.py "$@"
