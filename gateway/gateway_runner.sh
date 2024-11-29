@@ -1,6 +1,7 @@
 #!/bin/bash
 
-echo "Arguments: $@"
+args="$@"
+echo "Args: $args"
 
 # Expect the host filesystem to be mounted at /host
 chroot /host /bin/bash <<"EOT"
@@ -16,4 +17,4 @@ echo "Installing dependencies in the virtual environment"
 pip install -r requirements.txt
 
 echo "Running the gateway"
-python src/main.py "$@"
+python src/main.py "$args"
