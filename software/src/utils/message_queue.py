@@ -40,6 +40,6 @@ class MessageQueue:
             "values": dataclasses.asdict(payload),
         }
         with self.con:
-            sql_statement: str = "INSERT INTO queue_out (type, message) VALUES(?, ?)"
+            sql_statement: str = "INSERT INTO queue_out (type, message) VALUES(?, ?);"
             self.con.execute(sql_statement,("MQTT_message", str(new_message)))
             self.con.execute("PRAGMA wal_checkpoint(PASSIVE);")
