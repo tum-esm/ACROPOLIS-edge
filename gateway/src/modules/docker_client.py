@@ -36,9 +36,9 @@ class GatewayDockerClient:
                 if container.name == "acropolis_edge":
                     version = container.attrs["Config"]["Image"].split("-")[-1]
                     if version.__len__() > 0 and (
-                            version[0] == "v" or version.startswith("commit:")
+                            version[0] == "v" or version.length == 40
                     ):
-                        return version.split("commit:")[-1]
+                        return version
 
     def stop_edge(self):
         if self.is_edge_running():
