@@ -54,7 +54,9 @@ try:
         access_token = self_provisioning_get_access_token(args)
 
         archive_sqlite_db = sqlite.SqliteConnection("archive.db")
-        communication_sqlite_db = sqlite.SqliteConnection(os.path.join(ACROPOLIS_COMMUNICATION_DATA_PATH, "acropolis_comm_db.db"))
+        comm_db_path = os.path.join(ACROPOLIS_COMMUNICATION_DATA_PATH, "acropolis_comm_db.db")
+        print(f"Comm DB path: {comm_db_path}")
+        communication_sqlite_db = sqlite.SqliteConnection(comm_db_path)
 
         # create and run the mqtt client in a separate thread
         mqtt_client = mqtt.GatewayMqttClient(mqtt_message_queue, access_token)
