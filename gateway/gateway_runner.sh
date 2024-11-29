@@ -4,7 +4,7 @@ args="$@"
 echo "Args: $args"
 
 # Expect the host filesystem to be mounted at /host
-chroot /host /bin/bash <<"EOT"
+chroot /host /bin/bash <<EOT
 
 cd $ACROPOLIS_GATEWAY_DIR
 
@@ -17,4 +17,5 @@ echo "Installing dependencies in the virtual environment"
 pip install -r requirements.txt
 
 echo "Running the gateway"
-python src/main.py "$args"
+echo "Args: $args"
+python -u src/main.py "$args"
