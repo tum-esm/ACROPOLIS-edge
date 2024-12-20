@@ -4,13 +4,13 @@ on:
     branches:
       - main
     paths:
-      - "software/**"
+      - "software/controller/**"
       - ".github/workflows/test-edge-node.yaml"
   pull_request:
     branches:
       - main
     paths:
-      - "software/**"
+      - "software/controller/**"
       - ".github/workflows/test-edge-node.yaml"
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: software
+        working-directory: software/controller
     steps:
       # check-out repo and install python 3.12.4
       - name: Check out repository
@@ -34,8 +34,8 @@ jobs:
         id: cached-poetry-dependencies
         uses: actions/cache@v4
         with:
-          path: software/.venv
-          key: venv-${{ runner.os }}-3.12.4-${{ hashFiles('software/poetry.lock') }}
+          path: software/controller/.venv
+          key: venv-${{ runner.os }}-3.12.4-${{ hashFiles('software/controller/poetry.lock') }}
 
       # install poetry if venv not in cache
       - name: Install Poetry
