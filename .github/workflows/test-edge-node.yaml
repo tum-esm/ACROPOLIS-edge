@@ -5,13 +5,13 @@ on:
       - main
     paths:
       - "software/controller/**"
-      - ".github/workflows/test-edge-node.yaml"
+      - "controller/.github/workflows/test-edge-node.yaml"
   pull_request:
     branches:
       - main
     paths:
       - "software/controller/**"
-      - ".github/workflows/test-edge-node.yaml"
+      - "controller/.github/workflows/test-edge-node.yaml"
 
 jobs:
   test-edge-node-codebase:
