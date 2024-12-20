@@ -1,7 +1,7 @@
 import time
 from datetime import datetime
 
-import custom_types, interfaces, utils, hardware
+import custom_types, interfaces, utils
 
 
 class CalibrationProcedure:
@@ -56,7 +56,7 @@ class CalibrationProcedure:
             self.config.calibration.sampling_per_cylinder_seconds)
 
         # read the latest state
-        state = utils.StateInterface.read()
+        state = interfaces.StateInterface.read()
 
         current_position = state.next_calibration_cylinder
 
@@ -67,7 +67,7 @@ class CalibrationProcedure:
 
         # update state config
         state.next_calibration_cylinder = next_position
-        utils.StateInterface.write(state)
+        interfaces.StateInterface.write(state)
 
         # update sequence
 
@@ -102,7 +102,7 @@ class CalibrationProcedure:
         return self.config.calibration.gas_cylinders
 
     def run(self) -> None:
-        state = utils.StateInterface.read()
+        state = interfaces.StateInterface.read()
         calibration_time = datetime.utcnow().timestamp()
         self.logger.info(
             f"starting calibration procedure at timestamp {calibration_time}",
@@ -199,9 +199,9 @@ class CalibrationProcedure:
             f"finished calibration procedure at timestamp {datetime.utcnow().timestamp()}",
             forward=True,
         )
-        state = utils.StateInterface.read()
+        state = interfaces.StateInterface.read()
         state.last_calibration_time = calibration_time
-        utils.StateInterface.write(state)
+        interfaces.StateInterface.write(state)
 
     def is_due(self) -> bool:
         """returns true when calibration procedure should run
@@ -212,7 +212,7 @@ class CalibrationProcedure:
         #"""
 
         # load state, kept during configuration procedures
-        state = utils.StateInterface.read()
+        state = interfaces.StateInterface.read()
         current_utc_day = datetime.utcnow().date()
         current_utc_hour = datetime.utcnow().hour
 

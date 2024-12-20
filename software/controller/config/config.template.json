@@ -1,7 +1,7 @@
 {
-    "version": "1.0.0",
+    "version": "0.0.9",
     "active_components": {
-        "run_calibration_procedures": false,
+        "run_calibration_procedures": true,
         "send_messages_over_mqtt": true,
         "run_hardware_tests": false
     },
@@ -12,11 +12,11 @@
         "gas_cylinders": [
             {
                 "valve_number": 2,
-                "bottle_id": "..."
+                "bottle_id": "82"
             },
             {
                 "valve_number": 3,
-                "bottle_id": "..."
+                "bottle_id": "120"
             }
         ],
         "sampling_per_cylinder_seconds": 600,
