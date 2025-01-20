@@ -1,6 +1,6 @@
 import subprocess
 from os.path import dirname
-from typing import Optional, Any
+from typing import Optional
 
 from utils.paths import ACROPOLIS_GATEWAY_GIT_PATH
 
@@ -14,7 +14,7 @@ class GatewayGitClient:
             self.__class__.instance = self
 
     # Singleton pattern
-    def __new__(cls: Any) -> None:
+    def __new__(cls):
         if hasattr(cls, 'instance') and cls.instance is not None:
             return cls.instance
         return super(GatewayGitClient, cls).__new__(cls)
