@@ -5,13 +5,10 @@ import json
 import time
 from paho.mqtt.client import Client, MQTTMessage
 from typing import Literal
+from utils.misc import fatal_error
 
 # Global instance with proper typing
 GatewayMqttClientInstance: Optional["GatewayMqttClient"] = None
-
-
-class GatewayMQTTErrors(Exception):
-    """Base class for exceptions in this module."""
 
 
 class GatewayMqttClient(Client):
@@ -33,7 +30,7 @@ class GatewayMqttClient(Client):
         GatewayMqttClient.__call__(self)
 
     def __call__(self, *args: Any, **kwargs: Any) -> None:
-        raise GatewayMQTTErrors(
+        fatal_error(
             "GatewayMqttClient is a singleton and cannot be instantiated directly. "
             "Use GatewayMqttClient.instance() instead.")
 
