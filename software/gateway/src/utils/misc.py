@@ -7,7 +7,7 @@ from typing import Any, Optional
 from modules.mqtt import GatewayMqttClient
 
 
-def get_maybe(dictionary: Optional[Any], *properties: Any) -> Optional[Any]:
+def get_maybe(dictionary: Optional[dict], *properties: Any) -> Optional[Any]:
     for prop in properties:
         if dictionary is None:
             return None
