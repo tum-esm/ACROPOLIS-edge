@@ -13,19 +13,21 @@ CONTROLLER_IMAGE_PREFIX = "acropolis-edge-controller-"
 
 
 class GatewayDockerClient:
+    instance = None
+    last_launched_version = None
 
-    def __init__(self) -> None:
-        self.docker_client = docker.from_env()
-        self.last_launched_version = None
+    def __init__(self):
+        if self.__class__.instance is None:
+            print("[DOCKER-CLIENT] Initializing GatewayDockerClient")
+            self.__class__.instance = self
+
+            self.docker_client = docker.from_env()
 
     # Singleton pattern
-    def __new__(cls: Any) -> Any:
-        if not hasattr(cls, 'instance') or cls.instance is None:
-            print("[DOCKER-CLIENT] Initializing GatewayDockerClient")
-            cls.instance = super(GatewayDockerClient, cls).__new__(cls)
-        return cls.instance
-
-    instance = None
+    def __new__(cls):
+        if hasattr(cls, 'instance') and cls.instance is not None:
+            return cls.instance
+        return super(GatewayDockerClient, cls).__new__(cls)
 
     def is_edge_running(self) -> Any:
         containers = self.docker_client.containers.list()
@@ -131,16 +133,14 @@ class GatewayDockerClient:
                 print("[DOCKER-CLIENT][FATAL] Unable to reset to commit " +
                       commit_hash)
                 return
-            [image] = self.docker_client.images.build(
-                path=os.path.join(os.path.dirname(ACROPOLIS_GATEWAY_GIT_PATH),
-                                  "software/controller"),
+            build_result = self.docker_client.images.build(
+                path=os.path.join(os.path.dirname(ACROPOLIS_GATEWAY_GIT_PATH), "software/controller"),
                 dockerfile="./docker/Dockerfile",
-                tag=CONTROLLER_IMAGE_PREFIX + version_to_launch + ":latest")
-            print("[DOCKER-CLIENT] Built image for commit " + commit_hash +
-                  " with tag " + CONTROLLER_IMAGE_PREFIX + version_to_launch)
-            if image.tag(CONTROLLER_IMAGE_PREFIX + "unknown:latest"):
-                print('[DOCKER-CLIENT] Tagged image with "' +
-                      CONTROLLER_IMAGE_PREFIX + ':latest"')
+                tag=CONTROLLER_IMAGE_PREFIX + version_to_launch + ":latest"
+            )
+            print("[DOCKER-CLIENT] Built image for commit " + commit_hash + " with tag " + CONTROLLER_IMAGE_PREFIX + version_to_launch)
+            if build_result[0].tag(str(CONTROLLER_IMAGE_PREFIX + "unknown:latest")):
+                print('[DOCKER-CLIENT] Tagged image with "' + CONTROLLER_IMAGE_PREFIX + ':latest"')
             else:
                 print(f'[DOCKER-CLIENT][WARN] Unable to tag image with "' +
                       CONTROLLER_IMAGE_PREFIX + ':latest"')
@@ -154,6 +154,7 @@ class GatewayDockerClient:
                 '{"sharedKeys":"sw_title,sw_url,sw_version"}')
 
         # remove old containers and start the new one
+        self.last_launched_version = version_to_launch
         self.prune_containers()
         self.docker_client.containers.run(image_tag,
                                           detach=True,
