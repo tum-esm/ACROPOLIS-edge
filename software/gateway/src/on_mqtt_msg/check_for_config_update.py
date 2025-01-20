@@ -1,12 +1,13 @@
 import json
 from os import path
+from typing import Any, Optional
 
 import utils
 from modules import docker_client as dockerc
 from utils.paths import ACROPOLIS_DATA_PATH
 
 
-def on_msg_check_for_config_update(msg_payload):
+def on_msg_check_for_config_update(msg_payload: Optional[Any]) -> bool:
     controller_config = utils.misc.get_maybe(msg_payload, "controller_config")
     config_path = path.join(ACROPOLIS_DATA_PATH, "config.json")
 

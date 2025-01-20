@@ -4,17 +4,21 @@ import socket
 import ssl
 from random import randrange
 from time import sleep
+import argparse
+from typing import Any
 
-from paho.mqtt.client import Client
+from paho.mqtt.client import Client, MQTTMessage
 
 # global variable to contain the reply from the self-provisioning request
 provision_reply = None
 
+
 # Perform self-provisioning if needed to get an access-token for the gateway
-def self_provisioning_get_access_token(args):
+def self_provisioning_get_access_token(args: argparse.Namespace) -> str:
     global provision_reply
     # check if access token exists
-    access_token_path_env_var = os.environ.get("THINGSBOARD_GATEWAY_ACCESS_TOKEN") or "./tb_access_token"
+    access_token_path_env_var = os.environ.get(
+        "THINGSBOARD_GATEWAY_ACCESS_TOKEN") or "./tb_access_token"
 
     if os.path.exists(access_token_path_env_var):
         with open(access_token_path_env_var, "r") as f:
@@ -28,25 +32,36 @@ def self_provisioning_get_access_token(args):
     mqtt_client = Client()
     mqtt_client.username_pw_set("provision", None)
     mqtt_client.tls_set(cert_reqs=ssl.CERT_REQUIRED)
-    mqtt_client.on_connect = (lambda client, userdata, flags, rc: print(f"Connected to ThingsBoard for self-provisioning with result code {rc}"))
+    mqtt_client.on_connect = (lambda client, userdata, flags, rc: print(
+        f"Connected to ThingsBoard for self-provisioning with result code {rc}"
+    ))
     mqtt_client.connect(args.tb_host, args.tb_port)
 
     # set up the callback to receive the reply from the self-provisioning request
-    def on_message_callback(client, userdata, message):
+    def on_message_callback(client: Client, userdata: Any,
+                            message: MQTTMessage) -> None:
         global provision_reply
         provision_reply = message.payload
+
     mqtt_client.on_message = on_message_callback
     mqtt_client.subscribe("/provision/response", qos=1)
 
     mqtt_client.loop_start()
     sleep(0.1)
 
-    mqtt_client.publish("/provision/request",
-                        payload=json.dumps({
-                            "deviceName": get_device_name(args),
-                            "provisionDeviceKey": os.environ.get("THINGSBOARD_PROVISION_DEVICE_KEY") or "u89nftek43npopnvnt21",
-                            "provisionDeviceSecret": os.environ.get("THINGSBOARD_PROVISION_DEVICE_SECRET") or "r4acqug0fzh2wii4o4n6"
-                        }), qos=1 )
+    mqtt_client.publish(
+        "/provision/request",
+        payload=json.dumps({
+            "deviceName":
+            get_device_name(args),
+            "provisionDeviceKey":
+            os.environ.get("THINGSBOARD_PROVISION_DEVICE_KEY")
+            or "u89nftek43npopnvnt21",
+            "provisionDeviceSecret":
+            os.environ.get("THINGSBOARD_PROVISION_DEVICE_SECRET")
+            or "r4acqug0fzh2wii4o4n6"
+        }),
+        qos=1)
 
     for _ in range(100):
         if provision_reply is not None:
@@ -62,7 +77,8 @@ def self_provisioning_get_access_token(args):
         # check for error
         status = provision_reply.get("status")
         if status is not None and status == "FAILURE":
-            print("Self-provisioning failed with error: ", provision_reply.get("errorMsg"))
+            print("Self-provisioning failed with error: ",
+                  provision_reply.get("errorMsg"))
             exit(1)
 
         credentials_type = provision_reply.get("credentialsType")
@@ -70,7 +86,8 @@ def self_provisioning_get_access_token(args):
             credentials_value = provision_reply.get("credentialsValue")
             if credentials_value is not None:
                 print("Self-provisioning successful.")
-                print("Writing access token to file: ", access_token_path_env_var)
+                print("Writing access token to file: ",
+                      access_token_path_env_var)
                 with open(access_token_path_env_var, "w") as f:
                     f.write(credentials_value)
                 return credentials_value
@@ -80,10 +97,8 @@ def self_provisioning_get_access_token(args):
     exit(1)
 
 
-def get_device_name(args):
-    return (
-            getattr(args, "device_name", None)
-        or os.environ.get("THINGSBOARD_DEVICE_NAME")
-        or socket.gethostname()
-        or ("acropolis-gateway-" + str(randrange(1000000, 9999999, 1)))
-    )
+def get_device_name(args: argparse.Namespace) -> str:
+    return (getattr(args, "device_name", None)
+            or os.environ.get("THINGSBOARD_DEVICE_NAME")
+            or socket.gethostname()
+            or ("acropolis-gateway-" + str(randrange(1000000, 9999999, 1))))
