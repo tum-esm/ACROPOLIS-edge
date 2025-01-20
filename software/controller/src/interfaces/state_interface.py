@@ -3,12 +3,7 @@ import os
 
 from custom_types import state_types, config_types
 from interfaces import logging_interface
-
-DATA_PATH = os.path.join(os.environ.get("ACROPOLIS_DATA_PATH", "unknown"))
-if DATA_PATH == "unknown":
-    raise FileNotFoundError(f"Data path {DATA_PATH} does not exist.")
-else:
-    STATE_PATH = os.path.join(DATA_PATH, "state.json")
+from utils.paths import ACROPOLIS_CONTROLLER_STATE_PATH
 
 
 class StateInterface:
@@ -24,7 +19,7 @@ class StateInterface:
         logger = logging_interface.Logger(config=config,
                                           origin="state-interface")
         try:
-            with open(STATE_PATH, "r") as f:
+            with open(ACROPOLIS_CONTROLLER_STATE_PATH, "r") as f:
                 return state_types.State(**json.load(f))
         except FileNotFoundError:
             logger.warning("state.json is missing, creating a new one")
@@ -40,5 +35,5 @@ class StateInterface:
 
     @staticmethod
     def write(new_state: state_types.State) -> None:
-        with open(STATE_PATH, "w") as f:
+        with open(ACROPOLIS_CONTROLLER_STATE_PATH, "w") as f:
             json.dump(new_state.dict(), f)

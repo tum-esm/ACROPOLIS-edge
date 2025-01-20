@@ -1,15 +1,7 @@
 import json
-import os
-import pathlib
 
 from custom_types import config_types
-
-DATA_PATH = os.path.join(os.environ.get("ACROPOLIS_DATA_PATH", "unknown"))
-
-if DATA_PATH == "unknown":
-    raise FileNotFoundError(f"Data path {DATA_PATH} does not exist.")
-else:
-    CONFIG_PATH = os.path.join(DATA_PATH, "config.json")
+from utils.paths import ACROPOLIS_CONTROLLER_CONFIG_PATH
 
 
 class ConfigInterface:
@@ -23,7 +15,7 @@ class ConfigInterface:
     @staticmethod
     def read() -> config_types.Config:
         try:
-            with open(CONFIG_PATH, "r") as f:
+            with open(ACROPOLIS_CONTROLLER_CONFIG_PATH, "r") as f:
                 return config_types.Config(**json.load(f))
         except FileNotFoundError:
             raise ConfigInterface.FileIsMissing()

@@ -1,17 +1,15 @@
 import time
 import traceback
 from datetime import datetime
-from os.path import dirname, abspath, join
+from os.path import join
 from typing import Literal, Optional
 import os
 import sys
 import pytz
 
 from custom_types import mqtt_playload_types, config_types
-from utils import message_queue, shell_commands, log_path
-
-PROJECT_DIR = dirname(dirname(dirname(abspath(__file__))))
-LOGS_ARCHIVE_DIR = log_path.get_logs_archive_dir(PROJECT_DIR)
+from utils import message_queue, shell_commands
+from utils.paths import ACROPOLIS_CONTROLLER_LOGS_PATH
 
 
 def _pad_str_right(text: str,
@@ -163,10 +161,10 @@ class Logger:
         if self.write_to_file:
             # YYYY-MM-DD.log
             log_file_name = now_local.strftime('%Y-%m-%d') + ".log"
-            log_file_path = join(LOGS_ARCHIVE_DIR, log_file_name)
+            log_file_path = join(ACROPOLIS_CONTROLLER_LOGS_PATH, log_file_name)
 
             # Ensure the log directory exists
-            os.makedirs(LOGS_ARCHIVE_DIR, exist_ok=True)
+            os.makedirs(ACROPOLIS_CONTROLLER_LOGS_PATH, exist_ok=True)
 
             # Append the log string to the file
             with open(log_file_path, "a") as f1:

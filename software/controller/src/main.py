@@ -14,7 +14,6 @@ from interfaces import config_interface, logging_interface, state_interface, har
 from procedures import calibration, measurement, system_check
 from utils import alarms, expontential_backoff, system_info
 
-PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SW_VERSION = os.environ.get("ACROPOLIS_SW_VERSION", "unknown")
 
 
