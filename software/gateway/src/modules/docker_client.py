@@ -41,7 +41,7 @@ class GatewayDockerClient:
                 return True
         return False
 
-    def get_edge_version(self) -> Any:
+    def get_edge_version(self) -> Optional[str]:
         if self.is_edge_running():
             containers = self.docker_client.containers.list()
             for container in containers:
@@ -50,6 +50,7 @@ class GatewayDockerClient:
                     if version.__len__() > 0 and (version[0] == "v"
                                                   or version.__len__() == 40):
                         return version
+        return None
 
     def stop_edge(self) -> None:
         if self.is_edge_running():
@@ -134,13 +135,16 @@ class GatewayDockerClient:
                       commit_hash)
                 return
             build_result = self.docker_client.images.build(
-                path=os.path.join(os.path.dirname(ACROPOLIS_GATEWAY_GIT_PATH), "software/controller"),
+                path=os.path.join(os.path.dirname(ACROPOLIS_GATEWAY_GIT_PATH),
+                                  "software/controller"),
                 dockerfile="./docker/Dockerfile",
-                tag=CONTROLLER_IMAGE_PREFIX + version_to_launch + ":latest"
-            )
-            print("[DOCKER-CLIENT] Built image for commit " + commit_hash + " with tag " + CONTROLLER_IMAGE_PREFIX + version_to_launch)
-            if build_result[0].tag(str(CONTROLLER_IMAGE_PREFIX + "unknown:latest")):
-                print('[DOCKER-CLIENT] Tagged image with "' + CONTROLLER_IMAGE_PREFIX + ':latest"')
+                tag=CONTROLLER_IMAGE_PREFIX + version_to_launch + ":latest")
+            print("[DOCKER-CLIENT] Built image for commit " + commit_hash +
+                  " with tag " + CONTROLLER_IMAGE_PREFIX + version_to_launch)
+            if build_result[0].tag(
+                    str(CONTROLLER_IMAGE_PREFIX + "unknown:latest")):
+                print('[DOCKER-CLIENT] Tagged image with "' +
+                      CONTROLLER_IMAGE_PREFIX + ':latest"')
             else:
                 print(f'[DOCKER-CLIENT][WARN] Unable to tag image with "' +
                       CONTROLLER_IMAGE_PREFIX + ':latest"')
