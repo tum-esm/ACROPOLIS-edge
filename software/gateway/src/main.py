@@ -18,6 +18,7 @@ from on_mqtt_msg.check_for_ota_updates import on_msg_check_for_ota_update
 from on_mqtt_msg.on_rpc_request import on_rpc_request
 from self_provisioning import self_provisioning_get_access_token
 from utils.misc import get_maybe
+from utils.reboot_tiggers import offline_reboot_trigger
 
 archive_sqlite_db = None
 communication_sqlite_db = None
@@ -55,6 +56,9 @@ signal.signal(signal.SIGTERM, shutdown_handler)
 
 try:
     if __name__ == '__main__':
+        if offline_reboot_trigger():
+            print("Rebooting due to offline state...")
+            os.system("sudo reboot")
         # setup
         mqtt_message_queue: queue.Queue = queue.Queue()
         docker_client: GatewayDockerClient = GatewayDockerClient()
