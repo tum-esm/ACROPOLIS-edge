@@ -1,7 +1,6 @@
 import time
 from datetime import datetime
 import subprocess
-import json
 from utils.state_interface import StateInterface
 
 
