@@ -83,7 +83,9 @@ class GatewayMqttClient(Client):
             '{"sharedKeys":"sw_title,sw_url,sw_version,controller_config"}')
         self.connected = True
 
-        StateInterface.write(None)
+        state = StateInterface.read()
+        state.offline_timestamp = None
+        StateInterface.write(state)
 
     def __on_disconnect(self, _client: Client, _userdata: Any,
                         _rc: int) -> None:

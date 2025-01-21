@@ -1,6 +1,6 @@
 import json
 import pydantic
-from utils.paths import STATE_PATH
+from utils.paths import ACROPOLIS_GATEWAY_STATE_PATH
 from typing import Optional
 
 
@@ -14,18 +14,18 @@ class StateInterface:
     @staticmethod
     def read() -> State:
         try:
-            with open(STATE_PATH, "r") as f:
+            with open(ACROPOLIS_GATEWAY_STATE_PATH, "r") as f:
                 return State(**json.load(f))
         except FileNotFoundError:
             print("state.json is missing, creating a new one")
         except Exception as e:
             print(f"state.json is invalid, creating a new one: {e}")
 
-        new_empty_state = State(offline_since=None)
+        new_empty_state = State(offline_timestamp=None)
         StateInterface.write(new_state=new_empty_state)
         return new_empty_state
 
     @staticmethod
     def write(new_state: State) -> None:
-        with open(STATE_PATH, "w") as f:
+        with open(ACROPOLIS_GATEWAY_STATE_PATH, "w") as f:
             json.dump(new_state.dict(), f)
