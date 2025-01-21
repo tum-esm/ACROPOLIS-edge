@@ -82,6 +82,8 @@ def run() -> None:
     # tear down hardware on program termination
     def _graceful_teardown(*_args: Any) -> None:
         alarms.set_alarm(10, "graceful teardown")
+        logger.info("Received termination signal. Starting graceful teardown.",
+                    forward=True)
 
         logger.info("Starting graceful teardown.")
         hardware.teardown()
