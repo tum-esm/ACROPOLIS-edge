@@ -6,6 +6,7 @@ import time
 from paho.mqtt.client import Client, MQTTMessage
 from typing import Literal
 from utils.misc import fatal_error
+from utils.state_interface import StateInterface
 
 # Global instance with proper typing
 GatewayMqttClientInstance: Optional["GatewayMqttClient"] = None
@@ -63,6 +64,11 @@ class GatewayMqttClient(Client):
                      rc: int, *_extra_params: Any) -> None:
         if rc != 0:
             print(f"Failed to connect to ThingsBoard with result code: {rc}")
+
+            state = StateInterface.read()
+            state.offline_timestamp = int(time.time())
+            StateInterface.write(new_state=state)
+
             self.graceful_exit()
             return
 
@@ -76,6 +82,8 @@ class GatewayMqttClient(Client):
             'v1/devices/me/attributes/request/1',
             '{"sharedKeys":"sw_title,sw_url,sw_version,controller_config"}')
         self.connected = True
+
+        StateInterface.write(None)
 
     def __on_disconnect(self, _client: Client, _userdata: Any,
                         _rc: int) -> None:
