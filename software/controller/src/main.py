@@ -179,7 +179,7 @@ def run() -> None:
                         "Rebooting because no successful mainloop iteration for 24 hours.",
                         forward=True,
                     )
-                    os.system("sudo reboot")
+                    exit(1)
                 else:
                     logger.info(
                         "Persistent issue present. Last reboot is less than 24h ago. No action."
