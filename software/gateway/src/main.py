@@ -61,7 +61,7 @@ try:
             command = "/usr/local/bin/python3 /home/pi/acropolis/acropolis-edge/setup/RPi-edge-client/offline_reboot_trigger.py"
             update_sudo_crontab(new_command=command, schedule="@reboot")
         except Exception as e:
-            utils.misc.fatal_error(f"Could not update crontab: {e}")
+            pass
 
         # setup
         mqtt_message_queue = queue.Queue()

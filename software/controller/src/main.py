@@ -7,8 +7,6 @@ from typing import Any
 from datetime import datetime
 import pytz
 
-from software.gateway.src.utils import update_crontab
-
 # Ensure the project root is added to the Python path to allow absolute imports from src
 sys.path.insert(0, str(Path(__file__).parent))
 
