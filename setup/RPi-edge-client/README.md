@@ -119,13 +119,13 @@ mkdir logs
 
 - Copy `run_dockerized_gateway.sh` to /home/pi/acropolis/
 - Update `THINGSBOARD_PROVISION_*` environment parameters
--
 
 ```
 git clone https://github.com/tum-esm/ACROPOLIS-edge.git ./acropolis-edge
 sudo git config --system --add safe.directory '*'
 sudo ./build_gateway_runner_docker_image.sh
 ./run_dockerized_gateway.sh
+docker logs --tail 50 -f acropolis_edge_gateway
 ```
 
 # Create Image of SDCard
