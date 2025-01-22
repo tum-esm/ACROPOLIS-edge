@@ -15,6 +15,7 @@ from on_mqtt_msg.check_for_ota_updates import on_msg_check_for_ota_update
 from on_mqtt_msg.on_rpc_request import on_rpc_request
 from self_provisioning import self_provisioning_get_access_token
 from utils.misc import get_maybe
+from utils.update_crontab import update_sudo_crontab
 
 mqtt_client = None
 archive_sqlite_db = None
@@ -53,6 +54,15 @@ signal.signal(signal.SIGTERM, shutdown_handler)
 
 try:
     if __name__ == '__main__':
+
+        # -------------------------------------------------------------------------
+
+        try:
+            command = "/usr/local/bin/python3 /home/pi/acropolis/acropolis-edge/setup/RPi-edge-client/offline_reboot_trigger.py"
+            update_sudo_crontab(new_command=command, schedule="@reboot")
+        except Exception as e:
+            utils.misc.fatal_error(f"Could not update crontab: {e}")
+
         # setup
         mqtt_message_queue = queue.Queue()
         docker_client = docker_client.GatewayDockerClient()
