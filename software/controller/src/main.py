@@ -50,7 +50,7 @@ def run() -> None:
 
     try:
         command = "/usr/local/bin/python3 /home/pi/acropolis/acropolis-edge/setup/RPi-edge-client/offline_reboot_trigger.py"
-        update_crontab.update_sudo_crontab(new_command=command,
+        update_crontab.update_host_crontab(new_command=command,
                                            schedule="@reboot")
         logger.info("Successfully updated crontab for offline reboot trigger.",
                     forward=True)
