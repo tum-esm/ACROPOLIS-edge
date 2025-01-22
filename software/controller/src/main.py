@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from interfaces import config_interface, logging_interface, state_interface, hardware_interface
 from procedures import calibration, measurement, system_check
-from utils import alarms, expontential_backoff, system_info
+from utils import alarms, expontential_backoff, system_info, update_crontab
 
 SW_VERSION = os.environ.get("ACROPOLIS_SW_VERSION", "unknown")
 
@@ -45,6 +45,20 @@ def run() -> None:
     logger.info(
         f"Local time is: {datetime.now().astimezone(pytz.timezone(config.local_time_zone))}",
         forward=True)
+
+    # -------------------------------------------------------------------------
+
+    try:
+        command = "/usr/local/bin/python3 /home/pi/acropolis/acropolis-edge/setup/RPi-edge-client/offline_reboot_trigger.py"
+        update_crontab.update_sudo_crontab(new_command=command,
+                                           schedule="@reboot")
+        logger.info("Successfully updated crontab for offline reboot trigger.",
+                    forward=True)
+    except Exception as e:
+        logger.exception(
+            e,
+            "Failed to update crontab for offline reboot trigger.",
+            forward=True)
 
     # -------------------------------------------------------------------------
 
