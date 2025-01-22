@@ -10,7 +10,9 @@ from utils.paths import ACROPOLIS_GATEWAY_GIT_PATH, ACROPOLIS_DATA_PATH, ACROPOL
 CONTROLLER_CONTAINER_NAME = "acropolis_edge_controller"
 CONTROLLER_IMAGE_PREFIX = "acropolis-edge-controller-"
 
+
 class GatewayDockerClient:
+
     def __init__(self):
         self.docker_client = docker.from_env()
         self.last_launched_version = None
@@ -21,6 +23,7 @@ class GatewayDockerClient:
             print("[DOCKER-CLIENT] Initializing GatewayDockerClient")
             cls.instance = super(GatewayDockerClient, cls).__new__(cls)
         return cls.instance
+
     instance = None
 
     def is_edge_running(self):
@@ -41,9 +44,8 @@ class GatewayDockerClient:
             for container in containers:
                 if container.name == CONTROLLER_CONTAINER_NAME:
                     version = container.attrs["Config"]["Image"].split("-")[-1]
-                    if version.__len__() > 0 and (
-                            version[0] == "v" or version.__len__() == 40
-                    ):
+                    if version.__len__() > 0 and (version[0] == "v"
+                                                  or version.__len__() == 40):
                         return version
 
     def stop_edge(self):
@@ -52,9 +54,13 @@ class GatewayDockerClient:
             for container in containers:
                 if container.name == CONTROLLER_CONTAINER_NAME:
                     container.stop(timeout=60)
-                    print("[DOCKER-CLIENT] Stopped Acropolis Edge Controller container")
+                    print(
+                        "[DOCKER-CLIENT] Stopped Acropolis Edge Controller container"
+                    )
         else:
-            print("[DOCKER-CLIENT] Acropolis Edge Controller container is not running")
+            print(
+                "[DOCKER-CLIENT] Acropolis Edge Controller container is not running"
+            )
 
     def prune_containers(self):
         self.docker_client.containers.prune()
@@ -67,13 +73,17 @@ class GatewayDockerClient:
                 self.stop_edge()
                 self.start_controller(version_to_launch)
             else:
-                print("[DOCKER-CLIENT] Software already running with version " + version_to_launch)
+                print(
+                    "[DOCKER-CLIENT] Software already running with version " +
+                    version_to_launch)
                 self.last_launched_version = current_version
             return
 
         if version_to_launch is None:
             if self.last_launched_version is None:
-                print("[DOCKER-CLIENT][WARN] No version specified and no previous version available, launching latest build")
+                print(
+                    "[DOCKER-CLIENT][WARN] No version specified and no previous version available, launching latest build"
+                )
                 version_to_launch = "unknown"
             else:
                 version_to_launch = self.last_launched_version
@@ -83,42 +93,64 @@ class GatewayDockerClient:
         # edge container is not running
         # check if the image is available already, if not build it
         if not self.is_image_available(image_tag):
-            print("[DOCKER-CLIENT][FATAL] Image '" + image_tag + "' not available")
+            print("[DOCKER-CLIENT][FATAL] Image '" + image_tag +
+                  "' not available")
             if version_to_launch == "unknown":
-                print("[DOCKER-CLIENT][FATAL] No previous version available to build from")
-                print("[DOCKER-CLIENT][FATAL] Requesting version from ThingsBoard...")
-                GatewayMqttClient.instance().publish('v1/devices/me/attributes/request/1', '{"sharedKeys":"sw_title,sw_url,sw_version"}')
+                print(
+                    "[DOCKER-CLIENT][FATAL] No previous version available to build from"
+                )
+                print(
+                    "[DOCKER-CLIENT][FATAL] Requesting version from ThingsBoard..."
+                )
+                GatewayMqttClient.instance().publish(
+                    'v1/devices/me/attributes/request/1',
+                    '{"sharedKeys":"sw_title,sw_url,sw_version"}')
                 print("[DOCKER-CLIENT][FATAL] Delaying main loop by 30s...")
-                sleep(30) # it is unlikely that the version to build will be available immediately
+                sleep(
+                    30
+                )  # it is unlikely that the version to build will be available immediately
                 return
-            print("[DOCKER-CLIENT] Building image for version '" + version_to_launch + "'")
+            print("[DOCKER-CLIENT] Building image for version '" +
+                  version_to_launch + "'")
             GatewayGitClient().execute_fetch()
-            commit_hash = GatewayGitClient().get_commit_from_hash_or_tag(version_to_launch)
+            commit_hash = GatewayGitClient().get_commit_from_hash_or_tag(
+                version_to_launch)
             if commit_hash is None:
-                print("[DOCKER-CLIENT][FATAL] Unable to get commit hash for version '" + version_to_launch + "'")
+                print(
+                    "[DOCKER-CLIENT][FATAL] Unable to get commit hash for version '"
+                    + version_to_launch + "'")
                 return
             print("[DOCKER-CLIENT] Building image for commit " + commit_hash)
 
             if GatewayGitClient().execute_reset_to_commit(commit_hash) \
                 and GatewayGitClient().get_current_commit() == commit_hash:
-                print("[DOCKER-CLIENT] Successfully reset to commit " + commit_hash)
+                print("[DOCKER-CLIENT] Successfully reset to commit " +
+                      commit_hash)
             else:
-                print("[DOCKER-CLIENT][FATAL] Unable to reset to commit " + commit_hash)
+                print("[DOCKER-CLIENT][FATAL] Unable to reset to commit " +
+                      commit_hash)
                 return
             [image] = self.docker_client.images.build(
-                path=os.path.join(os.path.dirname(ACROPOLIS_GATEWAY_GIT_PATH), "software/controller"),
+                path=os.path.join(os.path.dirname(ACROPOLIS_GATEWAY_GIT_PATH),
+                                  "software/controller"),
                 dockerfile="./docker/Dockerfile",
-                tag=CONTROLLER_IMAGE_PREFIX + version_to_launch + ":latest"
-            )
-            print("[DOCKER-CLIENT] Built image for commit " + commit_hash + " with tag " + CONTROLLER_IMAGE_PREFIX + version_to_launch)
+                tag=CONTROLLER_IMAGE_PREFIX + version_to_launch + ":latest")
+            print("[DOCKER-CLIENT] Built image for commit " + commit_hash +
+                  " with tag " + CONTROLLER_IMAGE_PREFIX + version_to_launch)
             if image.tag(CONTROLLER_IMAGE_PREFIX + "unknown:latest"):
-                print('[DOCKER-CLIENT] Tagged image with "' + CONTROLLER_IMAGE_PREFIX + ':latest"')
+                print('[DOCKER-CLIENT] Tagged image with "' +
+                      CONTROLLER_IMAGE_PREFIX + ':latest"')
             else:
-                print(f'[DOCKER-CLIENT][WARN] Unable to tag image with "' + CONTROLLER_IMAGE_PREFIX + ':latest"')
+                print(f'[DOCKER-CLIENT][WARN] Unable to tag image with "' +
+                      CONTROLLER_IMAGE_PREFIX + ':latest"')
 
         if version_to_launch == "unknown":
-            print("[DOCKER-CLIENT][FATAL] Version to launch is 'unknown', requesting version from ThingsBoard...")
-            GatewayMqttClient.instance().publish('v1/devices/me/attributes/request/1', '{"sharedKeys":"sw_title,sw_url,sw_version"}')
+            print(
+                "[DOCKER-CLIENT][FATAL] Version to launch is 'unknown', requesting version from ThingsBoard..."
+            )
+            GatewayMqttClient.instance().publish(
+                'v1/devices/me/attributes/request/1',
+                '{"sharedKeys":"sw_title,sw_url,sw_version"}')
 
         # remove old containers and start the new one
         self.prune_containers()
@@ -158,6 +190,12 @@ class GatewayDockerClient:
                     "bind": "/root/logs",
                     "mode": "rw"
                 },
-            }
-        )
-        print("[DOCKER-CLIENT] Started Acropolis Edge container with version '" + version_to_launch + "'")
+                # Mount the host's crontab directory
+                "/var/spool/cron/crontabs": {
+                    "bind": "/host_crontabs",
+                    "mode": "rw"
+                },
+            })
+        print(
+            "[DOCKER-CLIENT] Started Acropolis Edge container with version '" +
+            version_to_launch + "'")
