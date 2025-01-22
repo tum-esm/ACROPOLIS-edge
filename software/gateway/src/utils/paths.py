@@ -13,7 +13,7 @@ ACROPOLIS_GATEWAY_GIT_PATH = str(
     or join(dirname(dirname(PROJECT_DIR)), ".git"))
 ACROPOLIS_GATEWAY_STATE_PATH = str(
     environ.get("ACROPOLIS_GATEWAY_STATE_PATH")
-    or join(dirname(PROJECT_DIR), "data", "state.json"))
+    or join(dirname(PROJECT_DIR), "gateway", "data", "state.json"))
 
 print(f'PROJECT_DIR: {PROJECT_DIR}')
 print(f'ACROPOLIS_DATA_PATH: {ACROPOLIS_DATA_PATH}')
