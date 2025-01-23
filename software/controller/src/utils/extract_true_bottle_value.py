@@ -16,8 +16,11 @@ def extract_true_bottle_value(bottle_id: int) -> Optional[float]:
     """
     file_path = os.path.join(PROJECT_DIR, "config",
                              "calibration_cylinders.csv")
-    with open(file_path, "r") as f:
-        calibration_cylinders = f.readlines()
+    try:
+        with open(file_path, "r") as f:
+            calibration_cylinders = f.readlines()
+    except FileNotFoundError:
+        return None
 
     # Skip the header
     for line in calibration_cylinders[1:]:
