@@ -25,7 +25,7 @@ class MQTTCO2Data():
 
 @dataclasses.dataclass
 class MQTTCO2CalibrationData():
-    cal_bottle_id: float
+    cal_bottle_id: int
     cal_gmp343_raw: float
     cal_gmp343_compensated: float
     cal_gmp343_filtered: float

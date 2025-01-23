@@ -137,7 +137,7 @@ class CO2MeasurementModule:
         self.message_queue.enqueue_message(
             timestamp=int(time.time()),
             payload=mqtt_playload_types.MQTTCO2CalibrationData(
-                cal_bottle_id=float(gas_bottle_id),
+                cal_bottle_id=gas_bottle_id,
                 cal_gmp343_raw=CO2_sensor_data.raw,
                 cal_gmp343_compensated=CO2_sensor_data.compensated,
                 cal_gmp343_filtered=CO2_sensor_data.filtered,

@@ -53,7 +53,7 @@ class CalibrationProcedure:
             # switch to each calibration valve
             self.hardware_interface.valves.set(number=gas.valve_number)
 
-            self._co2_measurement_interval(gas=gas.valve_number)
+            self._co2_measurement_interval(bottle_id=int(gas.bottle_id))
 
             # reset drying time extension for following bottles
             self.seconds_drying_with_first_bottle = 0
@@ -143,7 +143,7 @@ class CalibrationProcedure:
         self.logger.info("next calibration is due, calibrating now")
         return True
 
-    def _co2_measurement_interval(self, gas: int) -> None:
+    def _co2_measurement_interval(self, bottle_id: int) -> None:
         calibration_procedure_start_time = time.time()
         while True:
             # idle until next measurement period
@@ -163,7 +163,7 @@ class CalibrationProcedure:
             )
             # send measurement
             self.hardware_interface.co2_measurement_module.send_CO2_calibration_data(
-                CO2_sensor_data=measurement, gas_bottle_id=gas)
+                CO2_sensor_data=measurement, gas_bottle_id=bottle_id)
 
             # log measurements for local calibration correction
             self.hardware_interface.co2_measurement_module.calibration_co2_buffer.append(
@@ -177,7 +177,7 @@ class CalibrationProcedure:
                 median = self.hardware_interface.co2_measurement_module.calibration_co2_buffer.calculate_calibration_median(
                 )
                 self.hardware_interface.co2_measurement_module.log_cylinder_median(
-                    bottle_id=gas, median=median)
+                    bottle_id=bottle_id, median=median)
                 break
 
     def _alternate_bottle_for_drying(
