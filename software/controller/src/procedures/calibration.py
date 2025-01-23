@@ -58,8 +58,13 @@ class CalibrationProcedure:
             # reset drying time extension for following bottles
             self.seconds_drying_with_first_bottle = 0
 
+        # perform calibration corrections
         if self.config.active_components.perform_sht45_offset_correction:
             self.calibrate_sht45_zero_point()
+
+        if self.config.active_components.perform_co2_calibration_correction:
+            self.hardware_interface.co2_measurement_module.calculate_offset_slope(
+            )
 
         # switch back to measurement inlet
         self.hardware_interface.valves.set(
@@ -153,14 +158,26 @@ class CalibrationProcedure:
             time.sleep(seconds_to_wait_for_next_measurement)
             self.last_measurement_time = time.time()
 
+            # perform measurement
             measurement = self.hardware_interface.co2_measurement_module.perform_CO2_measurement(
             )
+            # send measurement
             self.hardware_interface.co2_measurement_module.send_CO2_calibration_data(
                 CO2_sensor_data=measurement, gas_bottle_id=gas)
+
+            # log measurements for local calibration correction
+            self.hardware_interface.co2_measurement_module.calibration_co2_buffer.append(
+                measurement.filtered)
 
             if ((self.last_measurement_time - calibration_procedure_start_time)
                     >= self.config.calibration.sampling_per_cylinder_seconds +
                     self.seconds_drying_with_first_bottle):
+
+                # log calibration median
+                median = self.hardware_interface.co2_measurement_module.calibration_co2_buffer.calculate_calibration_median(
+                )
+                self.hardware_interface.co2_measurement_module.log_cylinder_median(
+                    bottle_id=gas, median=median)
                 break
 
     def _alternate_bottle_for_drying(

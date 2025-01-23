@@ -11,6 +11,7 @@ class ActiveComponentsConfig(BaseModel):
     run_hardware_tests: bool
     run_sensor_heating_control: bool
     perform_sht45_offset_correction: bool
+    perform_co2_calibration_correction: bool
     log_to_file: bool
     log_to_console: bool
     simulation_mode: bool

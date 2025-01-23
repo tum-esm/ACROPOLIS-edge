@@ -39,5 +39,23 @@ class RingBuffer:
         else:
             return None
 
+    def calculate_calibration_median(self) -> Any:
+        """Returns the median after cutting the first 30% and last 5% of the buffer"""
+        n = len(self.ring_buffer)
+        start_index = int(n * 0.3)  # First 30%
+        end_index = int(n * 0.95)  # Last 5%
+
+        # Slice the list
+        trimmed_buffer = self.ring_buffer[start_index:end_index]
+
+        sorted_buffer = sorted(trimmed_buffer)
+        mid = len(sorted_buffer) // 2
+        if len(sorted_buffer) % 2 == 0:
+            # Average of two middle values for even length
+            return round((sorted_buffer[mid - 1] + sorted_buffer[mid]) / 2, 2)
+        else:
+            # Middle value for odd length
+            return round(sorted_buffer[mid], 2)
+
     def clear(self) -> None:
         self.ring_buffer = []

@@ -5,7 +5,9 @@
         "run_calibration_procedures": false,
         "send_messages_over_mqtt": true,
         "run_hardware_tests": false,
-        "run_sensor_heating_control": false,  
+        "run_sensor_heating_control": false, 
+        "perform_sht45_offset_correction": false,
+        "perform_co2_calibration_correction": true,
         "log_to_file": true,
         "log_to_console": false,
         "simulation_mode": false
@@ -26,7 +28,8 @@
         ],
         "sampling_per_cylinder_seconds": 600,
         "system_flushing_pump_pwm_duty_cycle": 0.5,
-        "system_flushing_seconds": 300
+        "system_flushing_seconds": 300,
+        "sht45_calibration_seconds": 60
 
     },
     "documentation": {
