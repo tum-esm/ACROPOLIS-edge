@@ -72,7 +72,7 @@ class CO2MeasurementModule:
                 self.config.hardware.gmp343_filter_seconds_averaging))
 
     def log_cylinder_median(self, bottle_id: int, median: float) -> None:
-        self.calibration_reading = {bottle_id: median}
+        self.calibration_reading[bottle_id] = median
         self.logger.info(
             f"Calculated CO2 calibration bottle {bottle_id} median: {median}",
             forward=True)
