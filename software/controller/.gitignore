@@ -1,29 +1,15 @@
 *.db*
 *.tmp.db
+*.log
 *.tmp.log
 *.tmp.json
 *.pyc
-.env
+*.env
 *.lock
-config.json
 nohup.out
-!.gitkeep
-.env.testing
-.env.development
-data/**/*.json
-heated_enclosure.ino.*
-config.h
+config.json
 state.json
 
 #folders
-logs/
 .mypy_cache/
 .pytest_cache/
-
-# ssh stuff
-authorized_keys
-id_ed25519_esm_technical_user
-id_ed25519_esm_technical_user.pub
-
-# system stuff
-wpa_supplicant.conf
