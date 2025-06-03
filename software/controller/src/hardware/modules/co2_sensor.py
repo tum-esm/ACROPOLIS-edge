@@ -37,7 +37,6 @@ class CO2MeasurementModule:
         self.co2_sensor = co2_sensor
         self.inlet_bme280 = inlet_bme280
         self.inlet_sht45 = inlet_sht45
-        self._update_air_inlet_parameters()
 
     def perform_CO2_measurement(self, calibration_mode: bool = False) -> Any:
         """do regular measurements for in config defined measurement interval"""

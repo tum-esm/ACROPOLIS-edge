@@ -105,7 +105,8 @@ class VaisalaGMP343(Sensor):
         self.serial_interface.wait_for_answer(expected_regex=STARTUP_REGEX,
                                               timeout=10)
         self._send_sensor_settings()
-        self.read()  # Initial read + throw away the first answer
+        self.read()
+        time.sleep(self.config.hardware.gmp343_filter_seconds_averaging + 1)
 
     def _shutdown_sensor(self) -> None:
         """Shutdown the sensor."""
