@@ -1,4 +1,5 @@
 from typing import Any, Dict, Optional
+import time
 
 from custom_types import config_types, sensor_types, mqtt_playload_types
 from interfaces import logging_interface, communication_queue
@@ -37,6 +38,10 @@ class CO2MeasurementModule:
         self.co2_sensor = co2_sensor
         self.inlet_bme280 = inlet_bme280
         self.inlet_sht45 = inlet_sht45
+        
+        # test initial sensor readings
+        self.perform_CO2_measurement(self.config.active_components.simulation_mode)
+        time.sleep(self.config.hardware.gmp343_filter_seconds_averaging + 1)
 
     def perform_CO2_measurement(self, calibration_mode: bool = False) -> Any:
         """do regular measurements for in config defined measurement interval"""
