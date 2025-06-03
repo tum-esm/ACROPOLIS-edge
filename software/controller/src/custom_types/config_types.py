@@ -66,6 +66,7 @@ class HardwareConfig(BaseModel):
     heat_box_heater_power_pin_out: int
     heat_box_heater_power_pin_frequency: int
     heat_box_ventilator_power_pin_out: int
+    heat_box_temperature_target: int = Field(..., ge=0, le=60)
     pump_pwm_duty_cycle: float = Field(ge=0, le=1)
     pump_power_pin_out: int
     pump_power_pin_frequency: int

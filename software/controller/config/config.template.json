@@ -45,6 +45,7 @@
         "heat_box_heater_power_pin_out": 18,
         "heat_box_heater_power_pin_frequency": 10000,
         "heat_box_ventilator_power_pin_out": 26,
+        "heat_box_temperature_target": 40,
         "pump_pwm_duty_cycle": 0.13,
         "pump_power_pin_out": 19,
         "pump_power_pin_frequency": 10000,
