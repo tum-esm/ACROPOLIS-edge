@@ -67,9 +67,9 @@ class HardwareConfig(BaseModel):
     heat_box_heater_power_pin_frequency: int
     heat_box_ventilator_power_pin_out: int
     heat_box_temperature_target: int = Field(..., ge=0, le=60)
-    heat_box_pid_kp: int = Field(..., ge=0, le=1000)
-    heat_box_pid_ki: int = Field(..., ge=0, le=10)
-    heat_box_pid_kd: int = Field(..., ge=0, le=10)
+    heat_box_pid_kp: float = Field(..., ge=0, le=1000)
+    heat_box_pid_ki: float = Field(..., ge=0, le=10)
+    heat_box_pid_kd: float = Field(..., ge=0, le=10)
     pump_pwm_duty_cycle: float = Field(ge=0, le=1)
     pump_power_pin_out: int
     pump_power_pin_frequency: int
