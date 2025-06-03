@@ -35,9 +35,9 @@ class HeatingBoxModule(threading.Thread):
 
         # pid
         temp = self.config.hardware.heat_box_temperature_target
-        kp = self.config.hardware.heat_box_kp
-        ki = self.config.hardware.heat_box_ki
-        kd = self.config.hardware.heat_box_kd
+        kp = self.config.hardware.heat_box_pid_kp
+        ki = self.config.hardware.heat_box_pid_ki
+        kd = self.config.hardware.heat_box_pid_kd
         self.pid = PID(kp, ki, kd, setpoint=temp)
         self.pid.output_limits = (0, 1)
 
