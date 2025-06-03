@@ -34,7 +34,11 @@ class HeatingBoxModule(threading.Thread):
         self.ventilator = ventilator
 
         # pid
-        self.pid = PID(1, 0.1, 0.05, setpoint=self.config.hardware.heat_box_temperature_target)
+        temp = self.config.hardware.heat_box_temperature_target
+        kp = self.config.hardware.heat_box_kp
+        ki = self.config.hardware.heat_box_ki
+        kd = self.config.hardware.heat_box_kd
+        self.pid = PID(kp, ki, kd, setpoint=temp)
         self.pid.output_limits = (0, 1)
 
         # default actor values
