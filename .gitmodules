@@ -1,0 +1,3 @@
+[submodule "software/gateway"]
+	path = software/gateway
+	url = git@github.com:tum-esm/thingsboard-edge-gateway.git
