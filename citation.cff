@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Aigner"
+  given-names: "Patrick"
+  orcid: "https://orcid.org/0000-0002-1530-415X"
+- family-names: "Frölich"
+  given-names: "Lars"
+  orcid: "https://orcid.org/0009-0000-1579-7727"
+title: "ACROPOLIS-edge"
+version: 0.0.95
+doi: 10.5281/zenodo.15849217
+date-released: 2025-07-17
+url: "https://github.com/tum-esm/ACROPOLIS-edge"
