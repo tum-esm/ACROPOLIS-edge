@@ -37,12 +37,6 @@ logger = logging_interface.Logger(config=config,
                                   communication_queue=queue,
                                   origin="main")
 
-if config.active_components.run_controller is False:
-    while True:
-        logger.info(f"Controller is not activated in the config. Waiting for new config.",
-                forward=True)
-        time.sleep(3600)  # sleep for 1 hour
-
 logger.horizontal_line()
 logger.info(
     f"Started new automation process with SW version {SW_VERSION} and PID {os.getpid()}.",
@@ -54,6 +48,13 @@ logger.info(
     forward=True)
 
 logger.info(f"Started with config: {config.dict()}", forward=True)
+
+# check if the controller is activated in the config
+if config.active_components.run_controller is False:
+    while True:
+        logger.info(f"Controller is not activated in the config. Waiting for new config.",
+                forward=True)
+        time.sleep(3600)  # sleep for 1 hour
 
 # initialize all hardware interface
 logger.info("Initializing hardware interfaces.", forward=True)
