@@ -2,6 +2,7 @@
     "version": "1.0.0",
     "local_time_zone": "Europe/Berlin",
     "active_components": {
+        "run_controller": true,
         "run_calibration_procedures": false,
         "send_messages_over_mqtt": true,
         "run_hardware_tests": false,

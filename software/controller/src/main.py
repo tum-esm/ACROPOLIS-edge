@@ -28,6 +28,7 @@ try:
 except Exception as e:
     raise e
 
+
 # initialize and check validity of state file
 state_interface.StateInterface.init()
 
@@ -35,6 +36,12 @@ state_interface.StateInterface.init()
 logger = logging_interface.Logger(config=config,
                                   communication_queue=queue,
                                   origin="main")
+
+if config.active_components.run_controller is False:
+    while True:
+        logger.info(f"Controller is not activated in the config. Waiting for new config.",
+                forward=True)
+        time.sleep(3600)  # sleep for 1 hour
 
 logger.horizontal_line()
 logger.info(

@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class ActiveComponentsConfig(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
+    run_controller: bool
     run_calibration_procedures: bool
     send_messages_over_mqtt: bool
     run_hardware_tests: bool
