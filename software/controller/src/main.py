@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from interfaces import config_interface, logging_interface, state_interface, hardware_interface, communication_queue
 from procedures import calibration, measurement, system_check
+from custom_types import mqtt_playload_types
 from utils import alarms, expontential_backoff
 
 SW_VERSION = os.environ.get("ACROPOLIS_SW_VERSION", "unknown")
@@ -26,6 +27,13 @@ queue = communication_queue.CommunicationQueue()
 try:
     config = config_interface.ConfigInterface.read()
 except Exception as e:
+    queue.enqueue_message(
+        type= "log",
+        payload=mqtt_playload_types.MQTTLogMessage(
+                severity="ERROR",
+                message=f"Failed to read config: {str(e)}",
+            ),
+    )
     raise e
 
 
