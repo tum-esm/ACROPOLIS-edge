@@ -15,7 +15,7 @@ class Actuator(ABC):
 
     class ActuatorError(Exception):
         """Raised when an error occurs in the actuator class."""
-
+        
     def __init__(
             self,
             config: config_types.Config,
@@ -87,6 +87,9 @@ class Actuator(ABC):
         try:
             return self._set(*args, **kwargs)
 
+        except (BrokenPipeError, ConnectionError) as e:
+            self.logger.exception(e, "Lost connection to pigpiod")
+            raise e
         except Exception as e:
             self.logger.exception(e, label="Could not set actuator.")
             raise self.ActuatorError("Could not set actuator.")

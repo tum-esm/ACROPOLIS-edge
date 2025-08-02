@@ -16,6 +16,7 @@ class Sensor(ABC):
 
     class SensorError(Exception):
         """Raised when an error occurs in the sensor class."""
+        
 
     def __init__(
             self,
@@ -90,6 +91,9 @@ class Sensor(ABC):
         try:
             return self._read(*args, **kwargs)
 
+        except (BrokenPipeError, ConnectionError) as e:
+            self.logger.exception(e, "Lost connection to pigpiod.")
+            raise e
         except Exception as e:
             self.logger.exception(e, label="Could not read sensor data.")
             raise self.SensorError("Could not read sensor data.")

@@ -174,6 +174,12 @@ while True:
 
         logger.info("Finished mainloop iteration.")
 
+
+    except (BrokenPipeError, ConnectionError) as e:
+        logger.exception(e, label="exception in mainloop", forward=True)
+        logger.info("GPIO Interface not available. Exiting.", forward=True)
+        exit(1)
+
     except Exception as e:
         logger.exception(e, label="exception in mainloop", forward=True)
 
