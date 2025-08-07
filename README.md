@@ -1,4 +1,10 @@
 # ACROPOLIS CO<sub>2</sub> Sensor Network
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/release/python-3120/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15849217.svg)](https://doi.org/10.5281/zenodo.15849217)
+[![mypy](https://github.com/tum-esm/ACROPOLIS-edge/actions/workflows/test-controller.yaml/badge.svg)](https://github.com/tum-esm/ACROPOLIS-edge/actions)
+[![mypy](https://github.com/tum-esm/ACROPOLIS-edge/actions/workflows/test-gateway.yaml/badge.svg)](https://github.com/tum-esm/ACROPOLIS-edge/actions)
+
 
 This repository contains the software and hardware blueprints for the measurement systems deployed at the edge of the **ACROPOLIS** (Autonomous and Calibrated Roof-top Observatory for MetroPOLItan Sensing) CO<sub>2</sub> sensor network. This initial network consists of twenty prototype systems evenly distributed across the city of Munich. The project is part of [**ICOS Cities**](https://www.icos-cp.eu/projects/icos-cities), funded by the European Union's Horizon 2020 Research and Innovation Programme under grant agreement No. **101037319**.
 
