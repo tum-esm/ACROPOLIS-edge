@@ -174,6 +174,12 @@ while True:
 
         logger.info("Finished mainloop iteration.")
 
+
+    except (BrokenPipeError, ConnectionError) as e:
+        logger.exception(e, label="exception in mainloop", forward=True)
+        logger.info("GPIO Interface not available. Exiting.", forward=True)
+        exit(1)
+
     except Exception as e:
         logger.exception(e, label="exception in mainloop", forward=True)
 
@@ -187,6 +193,12 @@ while True:
                 logger.info("Performing hardware reset.", forward=True)
                 hardware.reinitialize(config)
                 logger.info("Hardware reset was successful.", forward=True)
+            else:
+                logger.info(
+                    f"Exponential backoff condition not met. Waiting for {ebo.next_try_timer() - time.time()} seconds before restarting the hardware interface.",
+                    forward=True)
+                time.sleep(30)
+                
 
         except Exception as e:
             logger.exception(
