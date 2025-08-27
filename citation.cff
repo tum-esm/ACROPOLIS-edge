@@ -7,8 +7,8 @@ authors:
 - family-names: "Frölich"
   given-names: "Lars"
   orcid: "https://orcid.org/0009-0000-1579-7727"
-- family-names: “Chen”
-  given-names: “Jia”
+- family-names: "Chen"
+  given-names: "Jia"
   orcid: "https://orcid.org/0000-0002-6350-6610"
 title: "ACROPOLIS-edge"
 version: 0.0.95
