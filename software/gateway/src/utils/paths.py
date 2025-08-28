@@ -4,9 +4,9 @@ from os.path import dirname, join
 from modules.logging import debug
 
 PROJECT_DIR = dirname(dirname(dirname(path.abspath(__file__)))) # path to "gateway" folder
-GATEWAY_DATA_PATH = str(environ.get("TEG_DATA_PATH") or join(dirname(PROJECT_DIR)))
-CONTROLLER_LOGS_PATH = str(environ.get("TEG_CONTROLLER_LOGS_PATH") or join(dirname(dirname(PROJECT_DIR)), "logs"))
-GATEWAY_GIT_PATH = str(environ.get("TEG_GATEWAY_GIT_PATH") or join(dirname(dirname(PROJECT_DIR)), ".git"))
+GATEWAY_DATA_PATH = str(environ.get("ACROPOLIS_DATA_PATH") or join(dirname(PROJECT_DIR)))
+CONTROLLER_LOGS_PATH = str(environ.get("ACROPOLIS_CONTROLLER_LOGS_PATH") or join(dirname(dirname(PROJECT_DIR)), "logs"))
+GATEWAY_GIT_PATH = str(environ.get("ACROPOLIS_GATEWAY_GIT_PATH") or join(dirname(dirname(PROJECT_DIR)), ".git"))
 
 GATEWAY_LOGS_BUFFER_DB_NAME = "gateway_logs_buffer.db"
 GATEWAY_LOGS_BUFFER_DB_PATH = join(str(GATEWAY_DATA_PATH), GATEWAY_LOGS_BUFFER_DB_NAME)
