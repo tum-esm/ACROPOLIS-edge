@@ -15,6 +15,14 @@ def get_maybe(dictionary, *properties) -> Any:
         dictionary = dictionary.get(prop)
     return dictionary
 
+def get_instance_maybe(inst_type, *properties) -> Any:
+    """ Utility function to safely get the first property of a specific type from a list of properties."""
+    for prop in properties:
+        if prop is not None and isinstance(prop, inst_type):
+            return prop
+    return None
+
+
 def fatal_error(msg) -> None:
     # Add stacktrace to error message
     error_msg = str(msg)

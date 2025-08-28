@@ -5,14 +5,18 @@ from modules.file_writer import GatewayFileWriter
 from modules.mqtt import GatewayMqttClient
 from on_mqtt_msg.check_for_file_hashes_update import FILE_HASHES_TB_KEY
 
-from utils.misc import get_maybe
+from utils.misc import get_maybe, get_instance_maybe
 
 content_encodings = [None, "base64", "text"]
 
 def on_msg_check_for_files_definition_update(msg_payload: Any) -> bool:
-    files = get_maybe(msg_payload, "shared", "FILES") or get_maybe(msg_payload, "FILES")
+    files = get_instance_maybe(
+        dict,
+        get_maybe(msg_payload, "shared", "FILES"),
+        get_maybe(msg_payload, "FILES")
+    )
 
-    if files is None or not isinstance(files, dict):
+    if files is None:
         return False
 
     info("Files definitions received.")
