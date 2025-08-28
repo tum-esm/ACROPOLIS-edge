@@ -5,7 +5,7 @@ from modules.file_writer import GatewayFileWriter
 from modules.mqtt import GatewayMqttClient
 from on_mqtt_msg.check_for_file_hashes_update import FILE_HASHES_TB_KEY
 
-from src.utils.misc import get_maybe
+from utils.misc import get_maybe
 
 content_encodings = [None, "base64", "text"]
 
