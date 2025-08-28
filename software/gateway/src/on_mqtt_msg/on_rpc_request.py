@@ -10,9 +10,11 @@ from typing import Any, Optional
 import utils.paths
 from modules import sqlite
 from modules.docker_client import GatewayDockerClient
+from modules.file_writer import GatewayFileWriter
 from modules.mqtt import GatewayMqttClient
 
 from modules.logging import info, error, debug
+from on_mqtt_msg.check_for_file_hashes_update import FILE_HASHES_TB_KEY
 
 
 def rpc_reboot(rpc_msg_id: str, _method: Any, _params: Any):
@@ -44,6 +46,20 @@ def rpc_restart_controller(rpc_msg_id: str, _method: Any, _params: Any):
 def rpc_ping(rpc_msg_id: str, _method: Any, _params: Any):
     info("[RPC] Pong")
     send_rpc_response(rpc_msg_id, "Pong")
+
+
+def rpc_init_files(rpc_msg_id: str, _method: Any, _params: Any):
+    info("[RPC] Init files")
+
+    # setup file hashes client attribute
+    GatewayMqttClient().publish_message_raw("v1/devices/me/attributes", json.dumps({
+        FILE_HASHES_TB_KEY: {}
+    }))
+    GatewayFileWriter().set_tb_hashes({})
+
+    # request file definitions again to verify everything is correct
+    GatewayMqttClient().request_attributes({"sharedKeys": f"FILES"})
+    send_rpc_response(rpc_msg_id, "Files client attributes initialized")
 
 def rpc_run_command(rpc_msg_id: str, _method: Any, params: Any):
     # Read command parameters
@@ -205,6 +221,10 @@ RPC_METHODS = {
     "ping": {
         "description": "Ping the device (returns 'pong' reply)",
         "exec": rpc_ping
+    },
+    "init_files": {
+        "description": "Initialize file-related client attributes (FILE_HASHES, FILE_READ_*)",
+        "exec": rpc_init_files
     },
     "restart_controller": {
         "description": "Restart the controller docker container",
