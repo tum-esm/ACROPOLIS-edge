@@ -51,13 +51,13 @@ def log(level: str, message: str):
     if publish_failure and gateway_logs_buffer_db is not None:
         print(f'Buffering unpublished message.')
         gateway_logs_buffer_db.execute("""
-                        CREATE TABLE IF NOT EXISTS log_buffer (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            log_level text,
-                            message text,
-                            timestamp_ms INTEGER
-                        );
-                    """)
+            CREATE TABLE IF NOT EXISTS log_buffer (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                log_level text,
+                message text,
+                timestamp_ms INTEGER
+            );
+        """)
         gateway_logs_buffer_db.execute(
             "INSERT INTO log_buffer (log_level, message, timestamp_ms) VALUES (?, ?, ?)",
             (level, message, int(time.time_ns() / 1000_000))

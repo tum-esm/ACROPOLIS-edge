@@ -9,10 +9,10 @@ from docker.types import LogConfig
 from modules.git_client import GatewayGitClient
 from modules.logging import debug, info, warn, error
 from modules.mqtt import GatewayMqttClient
-from utils.paths import ACROPOLIS_GATEWAY_GIT_PATH, ACROPOLIS_DATA_PATH, ACROPOLIS_CONTROLLER_LOGS_PATH
+from utils.paths import GATEWAY_GIT_PATH, GATEWAY_DATA_PATH, CONTROLLER_LOGS_PATH
 
-CONTROLLER_CONTAINER_NAME = "acropolis_edge_controller"
-CONTROLLER_IMAGE_PREFIX = "acropolis-edge-controller-"
+CONTROLLER_CONTAINER_NAME = "teg_controller"
+CONTROLLER_IMAGE_PREFIX = "teg-controller-"
 
 singleton_instance : Optional["GatewayDockerClient"] = None
 
@@ -25,7 +25,10 @@ class GatewayDockerClient:
             debug("[DOCKER-CLIENT] Initializing GatewayDockerClient")
             super().__init__()
             singleton_instance = self
-            self.docker_client = docker.from_env()
+            try:
+                self.docker_client = docker.from_env()
+            except Exception as e:
+                error("[DOCKER-CLIENT] Failed to initialize GatewayDockerClient: {}".format(e))
 
     # Singleton pattern
     def __new__(cls: Any) -> Any:
@@ -80,9 +83,9 @@ class GatewayDockerClient:
                     if self.last_launched_version is None:
                         self.last_launched_version = self.get_edge_version()
                     container.stop(timeout=60)
-                    info("[DOCKER-CLIENT] Stopped Acropolis Edge Controller container")
+                    info("[DOCKER-CLIENT] Stopped Controller container")
         else:
-            info("[DOCKER-CLIENT] Acropolis Edge Controller container is not running")
+            info("[DOCKER-CLIENT] Controller container is not running")
 
     def prune_containers(self) -> None:
         self.docker_client.containers.prune()
@@ -139,7 +142,8 @@ class GatewayDockerClient:
                 return
             GatewayMqttClient().publish_sw_state(version_to_launch, "DOWNLOADED")
             build_result = self.docker_client.images.build(
-                path=os.path.join(os.path.dirname(ACROPOLIS_GATEWAY_GIT_PATH), "software/controller"),
+                # TODO: make this path configurable
+                path=os.path.join(os.path.dirname(GATEWAY_GIT_PATH), "software/controller"),
                 dockerfile="./docker/Dockerfile",
                 tag=CONTROLLER_IMAGE_PREFIX + version_to_launch + ":latest"
             )
@@ -171,11 +175,12 @@ class GatewayDockerClient:
             }),
             privileged=True,
             network_mode="host",
-            environment={
-                "ACROPOLIS_DATA_PATH": "/root/data",
-                "ACROPOLIS_LOG_TO_CONSOLE": "1",
-                "ACROPOLIS_SW_VERSION": version_to_launch
-            },
+            # TODO: forward env variables to controller (except TEG_ prefixed ones)
+            #environment={
+            #    "ACROPOLIS_DATA_PATH": "/root/data",
+            #    "ACROPOLIS_LOG_TO_CONSOLE": "1",
+            #    "ACROPOLIS_SW_VERSION": version_to_launch
+            #},
             volumes={
                 "/bin/vcgencmd": {
                     "bind": "/bin/vcgencmd",
@@ -189,15 +194,16 @@ class GatewayDockerClient:
                     "bind": "/bin/pigs",
                     "mode": "ro"
                 },
-                ACROPOLIS_DATA_PATH: {
+                GATEWAY_DATA_PATH: {
                     "bind": "/root/data",
                     "mode": "rw"
                 },
-                ACROPOLIS_CONTROLLER_LOGS_PATH: {
+                # TODO: remove this volume, the data path is sufficient (see above)
+                CONTROLLER_LOGS_PATH: {
                     "bind": "/root/logs",
                     "mode": "rw"
                 },
             }
         )
         GatewayMqttClient().publish_sw_state(version_to_launch, "UPDATED")
-        info("[DOCKER-CLIENT] Started Acropolis Edge container with version '" + version_to_launch + "'")
+        info("[DOCKER-CLIENT] Started container with version '" + version_to_launch + "'")

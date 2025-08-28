@@ -5,12 +5,12 @@ from typing import Any
 import utils
 from modules import docker_client as dockerc
 from modules.logging import info, debug, error
-from utils.paths import ACROPOLIS_DATA_PATH
+from utils.paths import GATEWAY_DATA_PATH
 
 
 def on_msg_check_for_config_update(msg_payload: Any) -> bool:
     controller_config = utils.misc.get_maybe(msg_payload, "controller_config") or utils.misc.get_maybe(msg_payload, "shared", "controller_config")
-    config_path = path.join(ACROPOLIS_DATA_PATH, "config.json")
+    config_path = path.join(GATEWAY_DATA_PATH, "config.json")
 
     if controller_config is None:
         return False
@@ -39,7 +39,7 @@ def on_msg_check_for_config_update(msg_payload: Any) -> bool:
         info("Config is outdated, updating...")
 
         docker_client = dockerc.GatewayDockerClient()
-        info("Stopping acropolis-controller docker container...")
+        info("Stopping controller docker container...")
         docker_client.stop_edge()
 
         info("Writing new config to file...")

@@ -6,6 +6,7 @@ import threading
 from time import sleep, time_ns
 from typing import Any, Optional
 
+from modules.file_writer import GatewayFileWriter
 from modules.logging import info, warn, debug
 import utils.paths
 import utils.misc
@@ -15,7 +16,9 @@ from modules.docker_client import GatewayDockerClient
 from modules.git_client import GatewayGitClient
 from modules.mqtt import GatewayMqttClient
 from on_mqtt_msg.check_for_config_update import on_msg_check_for_config_update
-from on_mqtt_msg.check_for_files_update import on_msg_check_for_files_update
+from on_mqtt_msg.check_for_file_content_update import on_msg_check_for_file_content_update
+from on_mqtt_msg.check_for_file_hashes_update import on_msg_check_for_file_hashes_update, FILE_HASHES_TB_KEY
+from on_mqtt_msg.check_for_files_definition_update import on_msg_check_for_files_definition_update
 from on_mqtt_msg.check_for_ota_updates import on_msg_check_for_ota_update
 from on_mqtt_msg.on_rpc_request import on_rpc_request
 from self_provisioning import self_provisioning_get_access_token
@@ -28,7 +31,6 @@ gateway_logs_buffer_db = None
 STOP_MAINLOOP = False
 AUX_DATA_PUBLISH_INTERVAL_MS = 20_000 # evey 20 seconds
 aux_data_publish_ts = None
-
 
 # Set up signal handling for safe shutdown
 def shutdown_handler(sig: Any, _frame: Any) -> None:
@@ -73,6 +75,7 @@ signal.signal(signal.SIGALRM, forced_shutdown_handler)
 signal.signal(signal.SIGINT, shutdown_handler)
 signal.signal(signal.SIGTERM, shutdown_handler)
 
+
 try:
     if __name__ == '__main__':
         # setup
@@ -80,7 +83,7 @@ try:
         git_client: GatewayGitClient = GatewayGitClient()
         args = parse_args()
         debug(f"Args: {args}")
-        access_token = self_provisioning_get_access_token(args)
+        provisioned, access_token = self_provisioning_get_access_token(args)
 
         # initialize sqlite database connections
         archive_sqlite_db = sqlite.SqliteConnection(utils.paths.GATEWAY_ARCHIVE_DB_PATH)
@@ -108,6 +111,28 @@ try:
         info("Gateway started successfully")
         mqtt_client.update_sys_info_attribute()
 
+        if provisioned:
+            info("Gateway is provisioned for first time, initializing attributes...")
+            GatewayMqttClient().publish_message_raw("v1/devices/me/attributes", json.dumps({ FILE_HASHES_TB_KEY: {}}))
+
+        # daemon thread for updating file content client attributes every 30 seconds
+        def file_update_check_daemon():
+            """Daemon thread to check for file updates every 30 seconds."""
+            while True:
+                sleep(30)
+                try:
+                    debug("Checking for file changes...")
+                    file_definitions = GatewayFileWriter().get_files()
+                    for file_id in file_definitions:
+                        if GatewayFileWriter().did_file_change(get_maybe(file_definitions, file_id, "path")):
+                            info(f"File {file_definitions[file_id]} changed on disk - requesting update")
+                            GatewayMqttClient().request_attributes({"clientKeys": FILE_HASHES_TB_KEY})
+                except Exception as ex:
+                    warn(f"Error checking for file changes: {ex}")
+        file_update_thread = threading.Thread(target=file_update_check_daemon, daemon=True)
+        file_update_thread.start()
+
+        # *** main loop ***
         while not STOP_MAINLOOP:
             # check if there are any new incoming mqtt messages in the queue, process them
             if not mqtt_client.message_queue.empty():
@@ -127,7 +152,9 @@ try:
                     if not any([
                             on_msg_check_for_config_update(msg_payload),
                             on_msg_check_for_ota_update(msg_payload),
-                            on_msg_check_for_files_update(msg_payload),
+                            on_msg_check_for_files_definition_update(msg_payload),
+                            on_msg_check_for_file_hashes_update(msg_payload),
+                            on_msg_check_for_file_content_update(msg_payload),
                     ]):
                         warn("[MAIN] Got invalid message: " + str(msg))
                         warn("[MAIN] Skipping invalid message...")
@@ -148,8 +175,7 @@ try:
                     debug('Sending buffered log message: ' + str(message[0]))
                     if not mqtt_client.publish_log(message[0][1], message[0][2], message[0][3]):
                         continue
-                    gateway_logs_buffer_db.execute(
-                        f"DELETE FROM {"log_buffer"} WHERE id = {message[0][0]}")
+                    gateway_logs_buffer_db.execute(f"DELETE FROM {"log_buffer"} WHERE id = {message[0][0]}")
                 continue
 
             # check if there are any new outgoing mqtt messages in the sqlite db
@@ -176,7 +202,9 @@ try:
                         f"DELETE FROM {sqlite.SqliteTables.CONTROLLER_MESSAGES.value} WHERE id = {message[0][0]}")
                 continue
 
-            if not docker_client.is_edge_running():
+            # automatically restart the controller's docker container if it is not running
+            # TODO
+            if False and not docker_client.is_edge_running():
                 info("Controller is not running, starting new container in 10s...")
                 sleep(10)
                 docker_client.start_controller()
@@ -196,7 +224,8 @@ try:
                     }
                 }))
 
-            if max(last_controller_health_check_ts, controller_running_since_ts) < int(time_ns() / 1_000_000) - (6 * 3600_000):
+            # TODO
+            if False and max(last_controller_health_check_ts, controller_running_since_ts) < int(time_ns() / 1_000_000) - (6 * 3600_000):
                 warn("Controller did not send health check in the last 6 hours, restarting container...")
                 docker_client.stop_edge()
 

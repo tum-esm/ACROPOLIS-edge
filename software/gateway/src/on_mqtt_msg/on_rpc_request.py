@@ -1,13 +1,15 @@
 import json
 import os
+import queue
 import signal
-from time import sleep
+import subprocess
+import threading
+from time import sleep, monotonic
 from typing import Any, Optional
 
 import utils.paths
 from modules import sqlite
 from modules.docker_client import GatewayDockerClient
-from modules.file_writer import GatewayFileWriter
 from modules.mqtt import GatewayMqttClient
 
 from modules.logging import info, error, debug
@@ -43,68 +45,77 @@ def rpc_ping(rpc_msg_id: str, _method: Any, _params: Any):
     info("[RPC] Pong")
     send_rpc_response(rpc_msg_id, "Pong")
 
-def rpc_files_upsert(rpc_msg_id: str, _method: Any, params: Any):
+def rpc_run_command(rpc_msg_id: str, _method: Any, params: Any):
+    # Read command parameters
     if type(params) is not dict:
-        return send_rpc_method_error(rpc_msg_id, "Upserting file definition failed: params is not a dictionary")
+        return send_rpc_method_error(rpc_msg_id, "Running command failed: params is not a dictionary")
+    if "command" not in params:
+        return send_rpc_method_error(rpc_msg_id, "Running command failed: missing 'command' in params")
+    if type(params["command"]) is not list or any(type(cmd) is not str for cmd in params["command"]):
+        return send_rpc_method_error(rpc_msg_id, "Running command failed: 'command' must be a list of strings")
+    if "timeout_s" in params and type(params["timeout_s"]) is not int:
+        return send_rpc_method_error(rpc_msg_id, "Running command failed: 'timeout_s' must be an integer")
+    timeout_s = params["timeout_s"] if "timeout_s" in params else 30
+    command = params["command"]
 
-    if "identifier" not in params or "path" not in params:
-        return send_rpc_method_error(rpc_msg_id, "Upserting file definition failed: missing 'identifier' or 'path' in params")
+    info(f"[RPC] Running command: ['{command}']")
+    def read_stream_to_queue(stream, out_q: queue.Queue[str]) -> None:
+        """Continuously read lines from `stream` and put them on a queue."""
+        with stream:  # closes the pipe on exit
+            for line in iter(stream.readline, ''):   # '' ⇒ EOF in text mode
+                out_q.put(line)
+    def read_lines_from_queue(line_queue: queue.Queue[str]) -> list[str]:
+        collected_lines = []
+        while True:
+             try:
+                 line = line_queue.get_nowait()
+             except queue.Empty:
+                 break
+             collected_lines.append(line)
+        return collected_lines
 
-    info(f"[RPC] Upserting file definition - {params['identifier']} -> {params['path']}")
-    GatewayFileWriter().upsert_file(params["identifier"], params["path"])
-    send_rpc_response(rpc_msg_id, f"OK - File definition upserted - {params['identifier']} -> {params['path']}")
+    # Run the command
+    start_timestamp = monotonic()
+    sub_process = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,  # merge stderr → stdout
+        text=True,  # get str, not bytes
+        bufsize=1,  # line‑buffered
+        encoding='utf‑8', # decode stdout to string via utf-8
+        errors='replace' # replace invalid characters with placeholder char during utf-8 decoding
+    )
 
-def rpc_files_remove(rpc_msg_id: str, _method: Any, params: Any):
-    if type(params) is not str:
-        return send_rpc_method_error(rpc_msg_id, "Removing file definition failed: params is not a string")
+    stdout_line_queue: queue.Queue[str] = queue.Queue()
+    pipe_reading_thread = threading.Thread(target=read_stream_to_queue, args=(sub_process.stdout, stdout_line_queue),
+                                           daemon=True)
+    pipe_reading_thread.start()
 
-    info(f"[RPC] Removing file definition '{params}'")
-    GatewayFileWriter().remove_file(params)
-    send_rpc_response(rpc_msg_id, f"OK - File definition removed - '{params}'")
+    output_lines: list[str] = []
+    try:
+        while sub_process.poll() is None:
+            # Drain any lines that are already waiting
+            output_lines.extend(read_lines_from_queue(stdout_line_queue))
 
-def rpc_files_init(rpc_msg_id: str, _method: Any, _params: Any):
-    info(f"[RPC] Initializing file definitions")
-    GatewayFileWriter().initialize_files()
-    send_rpc_response(rpc_msg_id, "OK - File definitions initialized")
+            if monotonic() - start_timestamp >= timeout_s:
+                sub_process.kill()
+                sub_process.wait()  # ensure process has ended
+                result = f"Error running command '{command}': Timeout after {timeout_s} seconds. Output: {'\n'.join(output_lines)}"
+                return send_rpc_method_error(rpc_msg_id, result)
 
-def rpc_file_append_line(rpc_msg_id: str, _method: Any, params: Any):
-    if type(params) is not dict:
-        return send_rpc_method_error(rpc_msg_id, "Appending file line failed: params is not a dictionary")
+            sleep(0.05)  # small sleep: reduce CPU without blocking
+        sub_process.wait()
+    finally:
+        # If we exit early (timeout or exception) make sure the reader thread ends
+        pipe_reading_thread.join(timeout=1)
 
-    if "identifier" not in params or "line" not in params:
-        return send_rpc_method_error(rpc_msg_id, "Appending file line failed: missing 'identifier' or 'line' in params")
-    if type(params["identifier"]) is not str or type(params["line"]) is not str:
-        return send_rpc_method_error(rpc_msg_id, "Appending file line failed: 'identifier' and 'line' must be strings")
+    # read any remaining lines from the queue
+    while not stdout_line_queue.empty():
+        output_lines.extend(read_lines_from_queue(stdout_line_queue))
 
-    info(f"[RPC] Appending file line - '{params['identifier']}' += '{params['line']}'")
-    GatewayFileWriter().append_file_line(params["identifier"], params["line"])
-    send_rpc_response(rpc_msg_id, f"OK - File line appended - '{params['identifier']}' += '{params['line']}'")
-
-def rpc_file_remove_line(rpc_msg_id: str, _method: Any, params: Any):
-    if type(params) is not dict:
-        return send_rpc_method_error(rpc_msg_id, "Removing file line failed: params is not a dictionary")
-
-    if "identifier" not in params or "line" not in params:
-        return send_rpc_method_error(rpc_msg_id, "Removing file line failed: missing 'identifier' or 'line' in params")
-    if type(params["identifier"]) is not str or type(params["line"]) is not str:
-        return send_rpc_method_error(rpc_msg_id, "Removing file line failed: 'identifier' and 'line' must be strings")
-
-    info(f"[RPC] Removing file line - '{params['identifier']}' -= '{params['line']}'")
-    GatewayFileWriter().remove_file_line(params["identifier"], params["line"])
-    send_rpc_response(rpc_msg_id, f"OK - File line removed - '{params['identifier']}' -= '{params['line']}'")
-
-def rpc_file_overwrite_content(rpc_msg_id: str, _method: Any, params: Any):
-    if type(params) is not dict:
-        return send_rpc_method_error(rpc_msg_id, "Overwriting file content failed: params is not a dictionary")
-
-    if "identifier" not in params or "content" not in params:
-        return send_rpc_method_error(rpc_msg_id, "Overwriting file content failed: missing 'identifier' or 'content' in params")
-    if type(params["identifier"]) is not str or type(params["content"]) is not str:
-        return send_rpc_method_error(rpc_msg_id, "Overwriting file content failed: 'identifier' and 'content' must be strings")
-
-    info(f"[RPC] Overwriting file content - '{params['identifier']}' = '{params['content']}'")
-    GatewayFileWriter().overwrite_file_content(params["identifier"], params["content"])
-    send_rpc_response(rpc_msg_id, f"OK - File content overwritten - '{params['identifier']}' = '{params['content']}'")
+    result = f"Command '{command}' exited with code {sub_process.returncode}. Output: {''.join(output_lines)}"
+    send_rpc_response(rpc_msg_id, f"OK - Command executed - {result}")
+    return None
 
 
 def verify_start_end_timestamp_params(params: Any) -> Optional[str]:
@@ -153,6 +164,8 @@ def rpc_archive_republish_messages(rpc_msg_id: str, _method: Any, params: Any):
             break
     archive_sqlite_db.close()
     send_rpc_response(rpc_msg_id, f"OK - {message_count} messages republished - {start_timestamp_ms} -> {end_timestamp_ms}")
+    return None
+
 
 def rpc_archive_discard_messages(rpc_msg_id: str, _method: Any, params: Any):
     params_verify_err = verify_start_end_timestamp_params(params)
@@ -173,6 +186,7 @@ def rpc_archive_discard_messages(rpc_msg_id: str, _method: Any, params: Any):
                                               (start_timestamp_ms, end_timestamp_ms))
     archive_sqlite_db.close()
     send_rpc_response(rpc_msg_id, f"OK - {message_count} messages discarded - {start_timestamp_ms} -> {end_timestamp_ms}")
+    return None
 
 
 RPC_METHODS = {
@@ -196,29 +210,9 @@ RPC_METHODS = {
         "description": "Restart the controller docker container",
         "exec": rpc_restart_controller
     },
-    "files_upsert": {
-        "description": "Upsert file definition ({identifier: str, path: str})",
-        "exec": rpc_files_upsert
-    },
-    "files_remove": {
-        "description": "Remove file definition ({identifier: str})",
-        "exec": rpc_files_remove
-    },
-    "files_init": {
-        "description": "Initialize file definitions",
-        "exec": rpc_files_init
-    },
-    "file_append_line": {
-        "description": "Append line to file ({identifier: str, line: str})",
-        "exec": rpc_file_append_line
-    },
-    "file_remove_line": {
-        "description": "Remove line from file ({identifier: str, line: str})",
-        "exec": rpc_file_remove_line
-    },
-    "file_overwrite_content": {
-        "description": "Overwrite file content ({identifier: str, content: str})",
-        "exec": rpc_file_overwrite_content
+    "run_command": {
+        "description": "Run arbitrary command ({command: list [str], timeout_s: int [default 30s]}) - use with caution!",
+        "exec": rpc_run_command
     },
     "archive_republish_messages": {
         "description": "Republish messages from archive ({start_timestamp_ms: int, end_timestamp_ms: int})",
