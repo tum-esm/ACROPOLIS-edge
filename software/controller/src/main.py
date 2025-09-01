@@ -179,6 +179,11 @@ while True:
         logger.exception(e, label="exception in mainloop", forward=True)
         logger.info("GPIO Interface not available. Exiting.", forward=True)
         exit(1)
+        
+    except (system_check.DiskUsageError) as e:
+        logger.exception(e, label="exception in mainloop", forward=True)
+        logger.info("Disk usage is too high. Trigger reboot.", forward=True)
+        os.system("sudo reboot")
 
     except Exception as e:
         logger.exception(e, label="exception in mainloop", forward=True)
