@@ -1,0 +1,9 @@
+[Unit]
+Description=Run network-lost-reboot.service daily at 00:00
+
+[Timer]
+OnCalendar=*-*-* 00:00:00
+RandomizedDelaySec=0
+
+[Install]
+WantedBy=timers.target
