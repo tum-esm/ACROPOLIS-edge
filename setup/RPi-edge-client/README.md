@@ -6,18 +6,20 @@ This guide provides step-by-step instructions to set up a Raspberry Pi 4 as an e
 
 ```bash
 📁 RPi-edge-client
+    📁 modem
+        📄 default.script
+        📄 modem-keepalive.service
+        📄 modem-keepalive.sh
+        📄 network-lost-reboot.service
+        📄 network-lost-reboot.sh
+        📄 network-lost-reboot.timer
+        📄 simcom-cm.service
     📄 config.txt
     📄 crontab.txt
-    📄 default.script
-    📄 modem-keepalive.service
-    📄 modem-keepalive.sh
-    📄 network-lost-reboot.service
-    📄 network-lost-reboot.sh
-    📄 network-lost-reboot.timer
     📄 run_dockerized_gateway.sh
     📄 pigpiod.service
     📄 README.md
-    📄 simcom-cm.service
+    
 ```
 
 ## 1. Install Raspberry Pi OS
@@ -122,7 +124,7 @@ sudo chmod 777 -R SIM8200_for_RPI
 
 ```bash
 cd /home/pi/acropolis/setup/RPi-edge-client
-sudo cp default.script /usr/share/udhcpc/
+sudo cp modem/default.script /usr/share/udhcpc/
 sudo chmod 755 /usr/share/udhcpc/default.script
 ```
 
@@ -177,6 +179,8 @@ sudo nano /usr/local/bin/modem-keepalive.sh
 sudo nano /usr/local/bin/network-lost-reboot.sh
 ```
 
+From `/modem/` directory, paste content of `modem-keepalive.sh` and `network-lost-reboot.sh` files.
+
 ## Enable executable
 ```bash
 sudo chmod +x /usr/local/bin/modem-keepalive.sh
@@ -191,7 +195,7 @@ sudo nano /etc/systemd/system/network-lost-reboot.service
 sudo nano /etc/systemd/system/network-lost-reboot.timer
 ```
 
-Past content of `modem-keepalive.service`, `simcom-cm.service`, `network-lost-reboot.service` and `network-lost-reboot.timer` files.
+From `/modem/` directory, paste content of `modem-keepalive.service`, `simcom-cm.service`, `network-lost-reboot.service` and `network-lost-reboot.timer` files.
 
 ## Enable services
 ```bash
