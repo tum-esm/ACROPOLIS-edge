@@ -7,8 +7,14 @@ This guide provides step-by-step instructions to set up a Raspberry Pi 4 as an e
 ```bash
 📁 RPi-edge-client
     📄 config.txt
+    📄 crontab.txt
     📄 default.script
+    📄 modem-keepalive.sh
+    📄 modem-keepalive.service
+    📄 run_dockerized_gateway.sh
+    📄 pigpiod.service
     📄 README.md
+    📄 simcom-cm.service
 ```
 
 ## 1. Install Raspberry Pi OS
@@ -125,33 +131,73 @@ sudo chmod a+x /home/pi/acropolis/run_dockerized_gateway.sh
 
 ### **Update Crontab for Automation**
 
-Edit crontab:
-
 ```bash
 sudo crontab -e
 ```
 
-Add:
+Past content of `contab.txt` file.
 
+```cron
+
+# Setup PIGPIO Daemon
+
+```bash
+sudo nano /etc/systemd/system/pigpiod.service
 ```
-# Add binary folders to PATH
-PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
-# GSM Modem
-@reboot sleep 10 && sudo -b /home/pi/SIM8200_for_RPI/Goonline/simcom-cm
-@reboot sudo -b udhcpc -i wwan0 -b
+## Enable services
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now pigpiod.service
+```
 
-# GPIO-Pins
-@reboot /usr/bin/pigpiod -n 127.0.0.1
+Past content of `pigpiod.service` file.
 
-# Docker
-@daily docker system prune -a --force --filter "until=8760h"
+```bash
+systemctl status pigpiod.service
+journalctl -u pigpiod.service -f
+```
 
-# Reboot on connectivity loss
-@daily /bin/bash /home/pi/acropolis/network_lost_reboot_trigger.sh
+# Setup Demons for Modem Management
 
-# Delete old log files (older than 100 days)
-@daily /usr/bin/find /home/pi/acropolis/logs/ -type f -mtime +100 -delete
+## Create sh script
+```bash
+sudo nano /usr/local/bin/modem-keepalive.sh
+```
+
+## Enable executable
+```bash
+sudo chmod +x /usr/local/bin/modem-keepalive.sh
+```
+
+## Create systemd service files
+```bash
+sudo nano /etc/systemd/system/modem-keepalive.service
+sudo nano /etc/systemd/system/simcom-cm.service
+```
+
+Past content of `modem-keepalive.service` and `simcom-cm.service` files.
+
+## Enable services
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now simcom-cm.service
+sudo systemctl enable --now modem-keepalive.service
+```
+
+## Check daemon status:
+```bash
+systemctl status simcom-cm.service
+journalctl -u simcom-cm.service -f
+```
+
+```bash
+systemctl status modem-keepalive.service
+journalctl -u modem-keepalive.service -f
+```
+
+```bash
+systemctl list-units --type=service --state=running
 ```
 
 # Setup Gateway

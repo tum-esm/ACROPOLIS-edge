@@ -1,0 +1,17 @@
+[Unit]
+Description=Watchdog for SIM7600/SIM8200 (reconnect on failure)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sleep 60
+ExecStart=/usr/local/bin/modem-keepalive.sh
+Restart=always
+RestartSec=5
+User=root
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
+
+[Install]
+WantedBy=multi-user.target
