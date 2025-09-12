@@ -137,8 +137,6 @@ sudo crontab -e
 
 Past content of `contab.txt` file.
 
-```cron
-
 # Setup PIGPIO Daemon
 
 ```bash
