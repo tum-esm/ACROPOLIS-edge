@@ -9,8 +9,11 @@ This guide provides step-by-step instructions to set up a Raspberry Pi 4 as an e
     📄 config.txt
     📄 crontab.txt
     📄 default.script
-    📄 modem-keepalive.sh
     📄 modem-keepalive.service
+    📄 modem-keepalive.sh
+    📄 network-lost-reboot.service
+    📄 network-lost-reboot.sh
+    📄 network-lost-reboot.timer
     📄 run_dockerized_gateway.sh
     📄 pigpiod.service
     📄 README.md
@@ -75,6 +78,8 @@ sudo make install
 curl -sSL https://install.python-poetry.org/ | python3.12 -
 ```
 
+Note. Building Python 3.12 may take a while. Raspberry Pi OS Lite (64-bit, Debian 12), already comes with Python 3.11. If you want to skip this step, you can adjust the scripts to use Python 3.11 instead of 3.12. (Not properly tested/integrated).
+
 ## 5. Configure Modem
 
 ### **AT Commands for Modem Setup**
@@ -101,9 +106,14 @@ AT+CNMP=38
 cd /home/pi
 wget https://www.waveshare.net/w/upload/8/89/SIM8200_for_RPI.7z
 7z x SIM8200_for_RPI.7z -r -o./SIM8200_for_RPI
-sudo chmod 777 -R SIM8200_for_RPI
 cd SIM8200_for_RPI/Goonline
 make clean && make
+sudo chmod +x simcom-cm
+```
+
+In case of permission issues, run:
+```bash
+sudo chmod 777 -R SIM8200_for_RPI
 ```
 
 ## 6. Set Up Networking & System Automation
@@ -113,18 +123,21 @@ make clean && make
 ```bash
 cd /home/pi/acropolis/setup/RPi-edge-client
 sudo cp default.script /usr/share/udhcpc/
-sudo chmod -R 0777 /usr/share/udhcpc/
+sudo chmod 755 /usr/share/udhcpc/default.script
+```
+
+In case of permission issues, run:
+```bash
+sudo chmod 0777 /usr/share/udhcpc/default.script
 ```
 
 ### **Create acropolis folder**
 
 ```bash
 sudo mkdir -p /home/pi/acropolis/
-git clone https://github.com/tum-esm/ACROPOLIS-edge.git ./acropolis-edge
+git clone https://github.com/tum-esm/ACROPOLIS-edge.git /home/pi/acropolis/acropolis-edge
 sudo git config --system --add safe.directory '*'
 cd /home/pi/acropolis/setup/RPi-edge-client
-sudo cp network_lost_reboot_trigger.sh /home/pi/acropolis/
-sudo chmod a+x /home/pi/acropolis/network_lost_reboot_trigger.sh
 sudo cp run_dockerized_gateway.sh /home/pi/acropolis/
 sudo chmod a+x /home/pi/acropolis/run_dockerized_gateway.sh
 ```
@@ -135,7 +148,7 @@ sudo chmod a+x /home/pi/acropolis/run_dockerized_gateway.sh
 sudo crontab -e
 ```
 
-Past content of `contab.txt` file.
+Past content of `crontab.txt` file.
 
 # Setup PIGPIO Daemon
 
@@ -161,32 +174,31 @@ journalctl -u pigpiod.service -f
 ## Create sh script
 ```bash
 sudo nano /usr/local/bin/modem-keepalive.sh
+sudo nano /usr/local/bin/network-lost-reboot.sh
 ```
 
 ## Enable executable
 ```bash
 sudo chmod +x /usr/local/bin/modem-keepalive.sh
+sudo chmod +x /usr/local/bin/network-lost-reboot.sh
 ```
 
 ## Create systemd service files
 ```bash
 sudo nano /etc/systemd/system/modem-keepalive.service
 sudo nano /etc/systemd/system/simcom-cm.service
+sudo nano /etc/systemd/system/network-lost-reboot.service
+sudo nano /etc/systemd/system/network-lost-reboot.timer
 ```
 
-Past content of `modem-keepalive.service` and `simcom-cm.service` files.
+Past content of `modem-keepalive.service`, `simcom-cm.service`, `network-lost-reboot.service` and `network-lost-reboot.timer` files.
 
 ## Enable services
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now simcom-cm.service
 sudo systemctl enable --now modem-keepalive.service
-```
-
-## Check daemon status:
-```bash
-systemctl status simcom-cm.service
-journalctl -u simcom-cm.service -f
+sudo systemctl enable --now network-lost-reboot.timer
 ```
 
 ```bash
@@ -209,7 +221,7 @@ mkdir -p /home/pi/acropolis/logs
 ### **Clone and Build Gateway**
 
 ```bash
-cd /home/pi/acropolis/software/gateway
+cd /home/pi/acropolis/acropolis-edge/software/gateway
 sudo ./build_gateway_runner_docker_image.sh
 cd /home/pi/acropolis
 sudo nano run_dockerized_gateway.sh # Update `THINGSBOARD_PROVISION_*` environment parameters
@@ -243,7 +255,7 @@ Insert fresh SD Card into personal computer
 ```bash
 diskutil list
 diskutil umountDisk /dev/disk[*]
-gzip -dc //Users/.../acropolis-edge-image.gz | sudo dd of=/dev/disk[*] bs=4M status=progres
+gzip -dc //Users/.../acropolis-edge-image.gz | sudo dd of=/dev/disk[*] bs=4M status=progress
 ```
 
 Remove SD Card and insert into RaspberryPi
@@ -259,9 +271,9 @@ reboot
 ### **Run Gateway Script**
 
 ```bash
-cd /home/pi/acopolis/acropolis-edge/software/gateway
+cd /home/pi/acropolis/acropolis-edge/software/gateway
 # make sure no 'tb_access_token' exists
-cd /home/pi/acopolis
+cd /home/pi/acropolis
 ./run_dockerized_gateway.sh
 docker logs --tail 50 -f acropolis_edge_gateway
 ```
