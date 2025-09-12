@@ -1,0 +1,14 @@
+  GNU nano 7.2                             /etc/systemd/system/pigpiod.service
+[Unit]
+Description=Daemon for the pigpio library
+After=network.target syslog.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/pigpiod
+Restart=always
+RestartSec=30
+User=root
+
+[Install]
+WantedBy=multi-user.target
