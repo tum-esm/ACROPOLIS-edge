@@ -7,7 +7,7 @@ PING_TARGET="1.1.1.1"        # or your APN's gateway / a stable endpoint
 PING_COUNT=2
 PING_TIMEOUT=3
 SLEEP_OK=600                  # seconds between checks when OK
-SLEEP_RETRY=10               # seconds after a repair attempt
+SLEEP_RETRY=600               # seconds after a repair attempt
 
 log(){ /usr/bin/logger -t modem-keepalive "$*"; }
 
