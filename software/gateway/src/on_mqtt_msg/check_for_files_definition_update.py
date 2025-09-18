@@ -7,7 +7,7 @@ from on_mqtt_msg.check_for_file_hashes_update import FILE_HASHES_TB_KEY
 
 from utils.misc import get_maybe, get_instance_maybe
 
-content_encodings = [None, "base64", "text"]
+content_encodings = [None, "base64", "text", "json"]
 
 def on_msg_check_for_files_definition_update(msg_payload: Any) -> bool:
     files = get_instance_maybe(
@@ -31,7 +31,7 @@ def on_msg_check_for_files_definition_update(msg_payload: Any) -> bool:
                 return False
 
             if get_maybe(files,file_id, "encoding") not in content_encodings:
-                error("Invalid files update received, unsupported 'encoding' property: " + get_maybe(files,file_id, "content_encoding"))
+                error("Invalid files update received, unsupported 'encoding' property: " + get_maybe(files,file_id, "encoding"))
                 return False
 
             if get_maybe(files,file_id, "create_if_not_exist") not in [None, True, False]:
