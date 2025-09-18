@@ -82,6 +82,15 @@ curl -sSL https://install.python-poetry.org/ | python3.12 -
 
 Note. Building Python 3.12 may take a while. Raspberry Pi OS Lite (64-bit, Debian 12), already comes with Python 3.11. If you want to skip this step, you can adjust the scripts to use Python 3.11 instead of 3.12. (Not properly tested/integrated).
 
+## Reduce Log Sizes
+
+```bash
+sudo nano /etc/systemd/journald.conf
+# Set:
+SystemMaxUse=200M
+SystemMaxFileSize=50M
+```
+
 ## 5. Configure Modem
 
 ### **AT Commands for Modem Setup**
@@ -150,7 +159,7 @@ sudo chmod a+x /home/pi/acropolis/run_dockerized_gateway.sh
 sudo crontab -e
 ```
 
-Past content of `crontab.txt` file.
+Paste content of `crontab.txt` file.
 
 # Setup PIGPIO Daemon
 
@@ -164,7 +173,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now pigpiod.service
 ```
 
-Past content of `pigpiod.service` file.
+Paste content of `pigpiod.service` file.
 
 ```bash
 systemctl status pigpiod.service
