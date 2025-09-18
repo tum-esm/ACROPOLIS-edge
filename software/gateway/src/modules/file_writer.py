@@ -4,6 +4,7 @@ from typing import Optional, Any
 
 from modules.mqtt import GatewayMqttClient
 from modules.logging import debug, info, error
+from utils.paths import CONTROLLER_DATA_PATH
 
 singleton_instance : Optional["GatewayFileWriter"] = None
 
@@ -30,6 +31,14 @@ class GatewayFileWriter:
         if singleton_instance is not None:
             return singleton_instance
         return super(GatewayFileWriter, cls).__new__(cls)
+
+    def expand_file_path(self, file_path: str|None) -> str | None:
+        if file_path is not None:
+            return ((file_path.replace("%DATA_PATH%", CONTROLLER_DATA_PATH)
+                .replace("$DATA_PATH$", CONTROLLER_DATA_PATH))
+                .replace("$DATA_PATH", CONTROLLER_DATA_PATH))
+        else:
+            return None
 
     def set_files(self, files: dict) -> None:
         self.files = files

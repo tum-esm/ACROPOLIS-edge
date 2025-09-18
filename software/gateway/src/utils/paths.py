@@ -1,12 +1,14 @@
 from os import path, environ
 from os.path import dirname, join
 
-from modules.logging import debug
+from modules.logging import error, debug
 
 PROJECT_DIR = dirname(dirname(dirname(path.abspath(__file__)))) # path to "gateway" folder
-GATEWAY_DATA_PATH = str(environ.get("ACROPOLIS_DATA_PATH") or join(dirname(PROJECT_DIR)))
-CONTROLLER_LOGS_PATH = str(environ.get("ACROPOLIS_CONTROLLER_LOGS_PATH") or join(dirname(dirname(PROJECT_DIR)), "logs"))
-GATEWAY_GIT_PATH = str(environ.get("ACROPOLIS_GATEWAY_GIT_PATH") or join(dirname(dirname(PROJECT_DIR)), ".git"))
+GATEWAY_DATA_PATH = str(environ.get("ACROPOLIS_DATA_PATH") or PROJECT_DIR)
+CONTROLLER_DATA_PATH = str(environ.get("TEG_CONTROLLER_DATA_PATH") or GATEWAY_DATA_PATH)
+CONTROLLER_LOGS_PATH = str(environ.get("ACROPOLIS_CONTROLLER_LOGS_PATH") or join(CONTROLLER_DATA_PATH, "logs"))
+CONTROLLER_GIT_PATH = str(environ.get("ACROPOLIS_GATEWAY_GIT_PATH") or "UNKNOWN")
+CONTROLLER_PROJECT_PATH = str(environ.get("TEG_CONTROLLER_PROJECT_PATH") or join(dirname(CONTROLLER_GIT_PATH), "software/controller"))
 
 GATEWAY_LOGS_BUFFER_DB_NAME = "gateway_logs_buffer.db"
 GATEWAY_LOGS_BUFFER_DB_PATH = join(str(GATEWAY_DATA_PATH), GATEWAY_LOGS_BUFFER_DB_NAME)
@@ -15,12 +17,15 @@ GATEWAY_ARCHIVE_DB_NAME = "gateway_archive.db"
 GATEWAY_ARCHIVE_DB_PATH = join(str(GATEWAY_DATA_PATH), GATEWAY_ARCHIVE_DB_NAME)
 
 COMMUNICATION_QUEUE_DB_NAME = "communication_queue.db"
-COMMUNICATION_QUEUE_DB_PATH = str(environ.get("TEG_COMMUNICATION_QUEUE_DB_PATH") or join(str(GATEWAY_DATA_PATH), COMMUNICATION_QUEUE_DB_NAME))
+COMMUNICATION_QUEUE_DB_PATH = join(str(CONTROLLER_DATA_PATH), COMMUNICATION_QUEUE_DB_NAME)
+
+if CONTROLLER_GIT_PATH == "UNKNOWN":
+    error("[FATAL_ERROR] TEG_CONTROLLER_GIT_PATH not set!")
 
 debug(f'PROJECT_DIR: {PROJECT_DIR}')
 debug(f'GATEWAY_DATA_PATH: {GATEWAY_DATA_PATH}')
 debug(f'CONTROLLER_LOGS_PATH: {CONTROLLER_LOGS_PATH}')
-debug(f'GATEWAY_GIT_PATH: {GATEWAY_GIT_PATH}')
+debug(f'CONTROLLER_GIT_PATH: {CONTROLLER_GIT_PATH}')
 
 debug(f'GATEWAY_LOGS_BUFFER_DB_PATH: {GATEWAY_LOGS_BUFFER_DB_PATH}')
 debug(f'GATEWAY_ARCHIVE_DB_PATH: {GATEWAY_ARCHIVE_DB_PATH}')

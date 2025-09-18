@@ -24,7 +24,7 @@ def on_msg_check_for_file_hashes_update(msg_payload: Any) -> bool:
     new_hashes = {}
 
     for file_id in file_defs:
-        file_path = get_maybe(file_defs, file_id, "path")
+        file_path = GatewayFileWriter().expand_file_path(get_maybe(file_defs, file_id, "path"))
         file_encoding = get_maybe(file_defs, file_id, "encoding") or "text"
         previous_file_hash = get_maybe(file_hashes, file_id, "hash")
         current_file_hash = GatewayFileWriter().calc_file_hash(file_path)

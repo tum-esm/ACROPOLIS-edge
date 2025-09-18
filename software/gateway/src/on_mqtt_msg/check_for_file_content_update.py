@@ -7,6 +7,7 @@ from typing import Any
 from modules.mqtt import GatewayMqttClient
 from on_mqtt_msg.check_for_file_hashes_update import FILE_HASHES_TB_KEY
 from utils.misc import file_exists, get_maybe
+from utils.paths import CONTROLLER_DATA_PATH
 
 FILE_CONTENT_PREFIX = "FILE_CONTENT_"
 
@@ -63,7 +64,7 @@ def on_msg_check_for_file_content_update(msg_payload: Any) -> bool:
         return False
 
     file_write_version = get_maybe(file_definition, "write_version")
-    file_path = get_maybe(file_definition, "path")
+    file_path = GatewayFileWriter().expand_file_path(get_maybe(file_definition, "path"))
     create_if_not_exist = get_maybe(file_definition, "create_if_not_exist") in [None, True, "True"]
     # check if file already exists, if not, check if it should be created
     if file_exists(file_path) or create_if_not_exist:
