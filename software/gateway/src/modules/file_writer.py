@@ -64,7 +64,7 @@ class GatewayFileWriter:
         if file_content is None:
             return None
 
-        if file_encoding == "text":
+        if file_encoding == "text" or file_encoding == "json":
             file_content = file_content.decode("utf-8")
         elif file_encoding == "base64":
             import base64
