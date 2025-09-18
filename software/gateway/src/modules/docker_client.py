@@ -12,7 +12,7 @@ from modules.mqtt import GatewayMqttClient
 from utils.paths import CONTROLLER_GIT_PATH, GATEWAY_DATA_PATH, CONTROLLER_LOGS_PATH, CONTROLLER_DATA_PATH, \
     CONTROLLER_PROJECT_PATH
 
-CONTROLLER_CONTAINER_NAME = "acropolis_edge_controller"
+CONTROLLER_CONTAINER_NAME = "teg_controller"
 CONTROLLER_IMAGE_PREFIX = "teg-controller-"
 
 singleton_instance : Optional["GatewayDockerClient"] = None
@@ -97,7 +97,7 @@ class GatewayDockerClient:
                     )
         return None
 
-    def stop_edge(self) -> None:
+    def stop_controller(self) -> None:
         if self.is_controller_running():
             containers = self.docker_client.containers.list()
             for container in containers:
@@ -118,7 +118,7 @@ class GatewayDockerClient:
         if self.is_controller_running():
             running_controller_version = self.get_controller_version()
             if running_controller_version != version_to_launch:
-                self.stop_edge()
+                self.stop_controller()
                 self.start_controller(version_to_launch)
             else:
                 info("[DOCKER-CLIENT] Software already running with version " + version_to_launch)

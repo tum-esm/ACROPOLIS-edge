@@ -41,7 +41,7 @@ def rpc_restart_controller(rpc_msg_id: str, _method: Any, _params: Any):
     info("[RPC] Restarting controller...")
     send_rpc_response(rpc_msg_id, "OK - Restarting Controller")
     sleep(3)
-    GatewayDockerClient().stop_edge()
+    GatewayDockerClient().stop_controller()
 
 def rpc_ping(rpc_msg_id: str, _method: Any, _params: Any):
     info("[RPC] Pong")

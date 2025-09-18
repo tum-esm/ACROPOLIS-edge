@@ -1,5 +1,6 @@
 import json
 
+from modules.docker_client import GatewayDockerClient
 from modules.file_writer import GatewayFileWriter, write_file_content_to_client_attribute
 from modules.logging import info, error
 from typing import Any
@@ -7,7 +8,6 @@ from typing import Any
 from modules.mqtt import GatewayMqttClient
 from on_mqtt_msg.check_for_file_hashes_update import FILE_HASHES_TB_KEY
 from utils.misc import file_exists, get_maybe
-from utils.paths import CONTROLLER_DATA_PATH
 
 FILE_CONTENT_PREFIX = "FILE_CONTENT_"
 
@@ -66,6 +66,8 @@ def on_msg_check_for_file_content_update(msg_payload: Any) -> bool:
     file_write_version = get_maybe(file_definition, "write_version")
     file_path = GatewayFileWriter().expand_file_path(get_maybe(file_definition, "path"))
     create_if_not_exist = get_maybe(file_definition, "create_if_not_exist") in [None, True, "True"]
+    restart_controller_on_change = get_maybe(file_definition, "restart_controller_on_change") in [True, "True"]
+
     # check if file already exists, if not, check if it should be created
     if file_exists(file_path) or create_if_not_exist:
         info(f"Writing file {file_id} at path: {file_path}")
@@ -93,6 +95,9 @@ def on_msg_check_for_file_content_update(msg_payload: Any) -> bool:
                     info(f"File {file_id} content updated, updating attribute")
                     write_file_content_to_client_attribute(file_id, input_file_content)
                     GatewayFileWriter().did_file_change(file_path) # update internal state
+                    if restart_controller_on_change:
+                        info(f"Restarting controller due to file content change")
+                        GatewayDockerClient().stop_controller()
                 else:
                     info(f"File {file_id} content unchanged, not updating attribute")
 

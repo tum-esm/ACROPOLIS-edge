@@ -239,7 +239,7 @@ try:
 
             if max(last_controller_health_check_ts, controller_running_since_ts) < int(time_ns() / 1_000_000) - (6 * 3600_000):
                 warn("Controller did not send health check in the last 6 hours, stopping container...")
-                docker_client.stop_edge()
+                docker_client.stop_controller()
                 continue
 
             # if nothing happened this iteration, sleep for a while
