@@ -9,6 +9,9 @@ from custom_types import mqtt_playload_types
 from interfaces import hardware_interface, logging_interface, communication_queue
 from utils import system_info
 
+class DiskUsageError(Exception):
+    """Custom exception for disk usage errors."""
+    pass
 
 class SystemCheckProcedure:
     """runs every mainloop call"""
@@ -101,6 +104,7 @@ class SystemCheckProcedure:
             self.logger.warning(
                 f"CPU usage is very high ({cpu_usage_percent} %)",
                 forward=True)
+            raise DiskUsageError("Disk usage is too high.")
 
         return round(cpu_usage_percent / 100, 4)
 
