@@ -12,7 +12,7 @@ from modules.mqtt import GatewayMqttClient
 from utils.paths import CONTROLLER_GIT_PATH, GATEWAY_DATA_PATH, CONTROLLER_LOGS_PATH, CONTROLLER_DATA_PATH, \
     CONTROLLER_PROJECT_PATH
 
-CONTROLLER_CONTAINER_NAME = "teg_controller"
+CONTROLLER_CONTAINER_NAME = "acropolis_edge_controller"
 CONTROLLER_IMAGE_PREFIX = "teg-controller-"
 
 singleton_instance : Optional["GatewayDockerClient"] = None
