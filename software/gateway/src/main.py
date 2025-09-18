@@ -100,7 +100,10 @@ try:
 
         # create and run the mqtt client in a separate thread
         mqtt_client = GatewayMqttClient().init(access_token)
-        mqtt_client.connect(args.tb_host, args.tb_port)
+        try:
+            mqtt_client.connect(args.tb_host, args.tb_port)
+        except Exception as e:
+            error(f"Failed to connect to ThingsBoard: {e}")
         mqtt_client_thread: threading.Thread = threading.Thread(
             target=lambda: mqtt_client.loop_forever())
         mqtt_client_thread.start()
@@ -109,7 +112,6 @@ try:
         sleep(5)
 
         info("Gateway started successfully")
-        mqtt_client.update_sys_info_attribute()
 
         if provisioned:
             info("Gateway is provisioned for first time, initializing attributes...")
@@ -177,8 +179,11 @@ try:
                     sleep(20)  # it is unlikely that the version to build will be available immediately
                     continue
 
-            if not mqtt_client_thread.is_alive():
-                warn("MQTT client thread died, exiting in 30 seconds...")
+            if not mqtt_client_thread.is_alive() or not mqtt_client.is_connected():
+                if not mqtt_client.is_connected():
+                    warn("MQTT client not connected, exiting in 30 seconds...")
+                else:
+                    warn("MQTT client thread died, exiting in 30 seconds...")
                 sleep(30)
                 utils.misc.fatal_error("MQTT client thread died")
 

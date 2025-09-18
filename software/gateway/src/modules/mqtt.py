@@ -67,6 +67,7 @@ class GatewayMqttClient(Client):
 
         self.connected = True
         self.request_attributes({"sharedKeys": "sw_title,sw_url,sw_version,FILES"})
+        self.update_sys_info_attribute()
 
     def __on_disconnect(self, _client, _userdata, result_code) -> None:
         self.connected = False
