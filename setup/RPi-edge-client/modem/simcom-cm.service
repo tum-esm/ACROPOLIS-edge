@@ -1,15 +1,18 @@
 [Unit]
 Description=SIMCom connection manager (SIM8200/SIM7600 on RPi)
-After=network-pre.target
-Wants=network-pre.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-Type=oneshot
+Type=simple
 WorkingDirectory=/home/pi/SIM8200_for_RPI/Goonline
 ExecStartPre=/bin/sleep 30
 ExecStart=/home/pi/SIM8200_for_RPI/Goonline/simcom-cm
-RemainAfterExit=yes
+Restart=on-failure
+RestartSec=5s
 User=root
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
