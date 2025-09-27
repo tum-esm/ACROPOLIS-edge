@@ -183,7 +183,9 @@ while True:
     except (system_check.DiskUsageError) as e:
         logger.exception(e, label="exception in mainloop", forward=True)
         logger.info("Disk usage is too high. Trigger reboot.", forward=True)
-        os.system("sudo reboot")
+        # prevent reboot loop when conditions met
+        #os.system("sudo reboot")
+        # TODO: add handler for disk usage errors
 
     except Exception as e:
         logger.exception(e, label="exception in mainloop", forward=True)
