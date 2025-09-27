@@ -5,6 +5,7 @@ import ssl
 from random import randrange
 from time import sleep
 import argparse
+from typing import Tuple
 
 from paho.mqtt.client import Client
 
@@ -15,7 +16,7 @@ provision_reply = None
 
 
 # Perform self-provisioning if needed to get an access-token for the gateway
-def self_provisioning_get_access_token(args: argparse.Namespace) -> (bool, str):
+def self_provisioning_get_access_token(args: argparse.Namespace) -> Tuple[bool, str]:
     global provision_reply
     # check if access token exists
     access_token_path_env_var = os.environ.get("THINGSBOARD_ACCESS_TOKEN") or "./tb_access_token"

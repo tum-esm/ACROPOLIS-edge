@@ -40,7 +40,7 @@ def on_msg_check_for_config_update(msg_payload: Any) -> bool:
 
         docker_client = dockerc.GatewayDockerClient()
         info("Stopping controller docker container...")
-        docker_client.stop_edge()
+        docker_client.stop_controller()
 
         info("Writing new config to file...")
         with open(config_path, "w") as f:
