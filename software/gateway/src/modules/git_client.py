@@ -3,7 +3,7 @@ from modules.logging import debug, error
 from os.path import dirname
 from typing import Optional, Any
 
-from utils.paths import ACROPOLIS_GATEWAY_GIT_PATH
+from utils.paths import CONTROLLER_GIT_PATH
 
 singleton_instance : Optional["GatewayGitClient"] = None
 
@@ -33,21 +33,21 @@ class GatewayGitClient:
 
     def get_current_commit(self) -> Optional[str]:
         try:
-            return subprocess.check_output(["git", "rev-parse", "HEAD"], encoding='utf-8', cwd=dirname(ACROPOLIS_GATEWAY_GIT_PATH)).strip()
+            return subprocess.check_output(["git", "rev-parse", "HEAD"], encoding='utf-8', cwd=dirname(CONTROLLER_GIT_PATH)).strip()
         except subprocess.CalledProcessError as e:
             error(f"[GIT-CLIENT] Unable to determine current commit hash: : {e} {e.stderr} {e.stdout}")
             return None
 
     def get_commit_for_tag(self, tag) -> Optional[str]:
         try:
-            return subprocess.check_output(["git", "rev-list", "-n 1", "tags/" + tag], encoding='utf-8', cwd=dirname(ACROPOLIS_GATEWAY_GIT_PATH)).strip()
+            return subprocess.check_output(["git", "rev-list", "-n 1", "tags/" + tag], encoding='utf-8', cwd=dirname(CONTROLLER_GIT_PATH)).strip()
         except subprocess.CalledProcessError as e:
             error(f"[GIT-CLIENT] Unable to find commit hash for tag '{tag}': {e} {e.stderr} {e.stdout}")
             return None
 
     def verify_commit_hash_or_tag_exists(self, commit_hash: str) -> bool:
         try:
-            return (subprocess.check_output(["git", "cat-file", "-t", commit_hash], cwd=dirname(ACROPOLIS_GATEWAY_GIT_PATH))
+            return (subprocess.check_output(["git", "cat-file", "-t", commit_hash], cwd=dirname(CONTROLLER_GIT_PATH))
                     .strip() == b'commit')
         except subprocess.CalledProcessError as e:
             error(f"[GIT-CLIENT] Unable to verify commit hash: {e} {e.stderr} {e.stdout}")
@@ -55,9 +55,9 @@ class GatewayGitClient:
 
     def execute_reset_to_commit(self, commit_hash: str) -> bool:
         try:
-            if subprocess.run(["git", "checkout", "-f", commit_hash], cwd=dirname(ACROPOLIS_GATEWAY_GIT_PATH)).returncode == 0\
-                and subprocess.run(["git", "reset", "HEAD", "--hard"], cwd=dirname(ACROPOLIS_GATEWAY_GIT_PATH)).returncode == 0\
-                and subprocess.run(["git", "clean", "-f", "-d"], cwd=dirname(ACROPOLIS_GATEWAY_GIT_PATH)).returncode == 0:
+            if subprocess.run(["git", "checkout", "-f", commit_hash], cwd=dirname(CONTROLLER_GIT_PATH)).returncode == 0\
+                and subprocess.run(["git", "reset", "HEAD", "--hard"], cwd=dirname(CONTROLLER_GIT_PATH)).returncode == 0\
+                and subprocess.run(["git", "clean", "-f", "-d"], cwd=dirname(CONTROLLER_GIT_PATH)).returncode == 0:
                 return True
         except subprocess.CalledProcessError as e:
             error(f"[GIT-CLIENT] Unable to reset to commit hash: {e} {e.stderr} {e.stdout}")
@@ -65,7 +65,7 @@ class GatewayGitClient:
 
     def execute_fetch(self) -> bool:
         try:
-            if subprocess.run(["git", "fetch"], cwd=dirname(ACROPOLIS_GATEWAY_GIT_PATH)).returncode == 0:
+            if subprocess.run(["git", "fetch"], cwd=dirname(CONTROLLER_GIT_PATH)).returncode == 0:
                 return True
         except subprocess.CalledProcessError as e:
             error(f"[GIT-CLIENT] Unable to fetch from remote: {e} {e.stderr} {e.stdout}")

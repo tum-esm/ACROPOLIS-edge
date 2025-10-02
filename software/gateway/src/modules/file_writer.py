@@ -1,13 +1,22 @@
 import json
+from hashlib import md5
 from typing import Optional, Any
 
 from modules.mqtt import GatewayMqttClient
 from modules.logging import debug, info, error
+from utils.paths import CONTROLLER_DATA_PATH
 
 singleton_instance : Optional["GatewayFileWriter"] = None
 
+
+def write_file_content_to_client_attribute(file_identifier: str, file_content: str) -> None:
+    GatewayMqttClient().publish_message_raw("v1/devices/me/attributes", json.dumps({("FILE_READ_" + file_identifier): file_content}))
+
+
 class GatewayFileWriter:
-    files = None
+    files: Optional[dict] = None
+    hashes: dict[str, str] = {}
+    tb_hashes: Optional[dict] = None
 
     def __init__(self) -> None:
         global singleton_instance
@@ -23,83 +32,68 @@ class GatewayFileWriter:
             return singleton_instance
         return super(GatewayFileWriter, cls).__new__(cls)
 
+    def expand_file_path(self, file_path: Optional[str]) -> Optional[str]:
+        if file_path is None:
+            return None
+
+        return ((file_path.replace("%DATA_PATH%", CONTROLLER_DATA_PATH)
+            .replace("$DATA_PATH$", CONTROLLER_DATA_PATH))
+            .replace("$DATA_PATH", CONTROLLER_DATA_PATH))
+
+
     def set_files(self, files: dict) -> None:
         self.files = files
-        self.update_all_files_content_client_attributes()
 
-    def initialize_files(self) -> None:
-        if self.files is not None:
-            raise Exception("Files definition is already available")
-        self.files = {}
-        self.write_files_definition_to_client_attribute()
+    def set_tb_hashes(self, hashes: dict) -> None:
+        self.tb_hashes = hashes
 
-    def upsert_file(self, file_identifier: str, file_path: str) -> None:
-        if self.files is None:
-            raise Exception("Files definition is not available")
-        self.files[file_identifier] = file_path
-        self.write_file_content_to_client_attribute(file_identifier, self.read_file(file_path))
-        self.write_files_definition_to_client_attribute()
-
-    def remove_file(self, file_identifier: str) -> None:
-        if self.files is None:
-            raise Exception("Files definition is not available")
-        if file_identifier not in self.files:
-            raise Exception(f"File with identifier '{file_identifier}' not found")
-        del self.files[file_identifier]
-        self.write_file_content_to_client_attribute(file_identifier, "")
-        self.write_files_definition_to_client_attribute()
-
-    def update_all_files_content_client_attributes(self) -> None:
-        if self.files is None:
-            raise Exception("Files definition is not available")
-        for file_identifier in self.files:
-            info(f"Updating file content for file: {file_identifier}")
-            self.write_file_content_to_client_attribute(file_identifier, self.read_file(self.files[file_identifier]))
-
-    def write_files_definition_to_client_attribute(self) -> None:
-        GatewayMqttClient().publish_message_raw("v1/devices/me/attributes", json.dumps({"files": self.files}))
-
-    def write_file_content_to_client_attribute(self, file_identifier: str, file_content) -> None:
-        GatewayMqttClient().publish_message_raw("v1/devices/me/attributes", json.dumps({("file_" + file_identifier): file_content}))
+    # Read raw file contents into bytes array
+    def read_file_raw(self, file_path: str) -> bytes | None:
+        try:
+            with open(file_path, "rb") as f:
+                file_content = f.read()
+                file_hash = md5(file_content).hexdigest()
+                if file_path not in self.hashes:
+                    self.hashes[file_path] = file_hash
+                return file_content
+        except FileNotFoundError:
+            return None
 
     # Read file contents into string
-    def read_file(self, file_path: str) -> str:
-        try:
-            with open(file_path, "r") as f:
-                file_contents = f.read()
-        except FileNotFoundError:
-            error(f"No file found at path: {file_path}")
-            file_contents = ""
-        return file_contents
+    def read_file(self, file_path: str, file_encoding: str) -> str | None:
+        file_content = self.read_file_raw(file_path)
+        if file_content is None:
+            return None
 
-    def append_file_line(self, identifier, line):
+        if file_encoding == "text" or file_encoding == "json":
+            return file_content.decode("utf-8")
+        elif file_encoding == "base64":
+            import base64
+            return base64.b64encode(file_content).decode("utf-8")
+        else:
+            error(f"Unknown file encoding: {file_encoding}, defaulting to text")
+            return file_content.decode("utf-8")
+
+    def calc_file_hash(self, path: str) -> str:
+        file_content = self.read_file_raw(path)
+        if file_content is None:
+            return "E_NOFILE"
+        return md5(file_content).hexdigest()
+
+    def did_file_change(self, path: str) -> bool:
+        file_hash = self.calc_file_hash(path)
+        if path not in self.hashes:
+            self.hashes[path] = file_hash
+            return False
+        if file_hash != self.hashes[path]:
+            self.hashes[path] = file_hash
+            return True
+        return False
+
+    def get_files(self) -> dict:
         if self.files is None:
             raise Exception("Files definition is not available")
-        if identifier not in self.files:
-            raise Exception(f"File with identifier '{identifier}' not found")
-        with open(self.files[identifier], "a") as f:
-            f.write("\n" + line)
+        return self.files
 
-        self.write_file_content_to_client_attribute(identifier, self.read_file(self.files[identifier]))
-
-    def remove_file_line(self, identifier, line):
-        if self.files is None:
-            raise Exception("Files definition is not available")
-        if identifier not in self.files:
-            raise Exception(f"File with identifier '{identifier}' not found")
-        with open(self.files[identifier], "r") as f:
-            lines = f.readlines()
-        with open(self.files[identifier], "w") as f:
-            for l in lines:
-                if l.strip() != line:
-                    f.write(l)
-        self.write_file_content_to_client_attribute(identifier, self.read_file(self.files[identifier]))
-
-    def overwrite_file_content(self, identifier, content):
-        if self.files is None:
-            raise Exception("Files definition is not available")
-        if identifier not in self.files:
-            raise Exception(f"File with identifier '{identifier}' not found")
-        with open(self.files[identifier], "w") as f:
-            f.write(content)
-        self.write_file_content_to_client_attribute(identifier, self.read_file(self.files[identifier]))
+    def get_tb_file_hashes(self) -> Optional[dict]:
+        return self.tb_hashes

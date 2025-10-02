@@ -11,6 +11,7 @@ from modules.logging import info, error, debug, warn
 singleton_instance : Optional["GatewayMqttClient"] = None
 
 class GatewayMqttClient(Client):
+    attribute_request_id: int = 0
     initialized = False
     connected = False
     message_queue : Queue = Queue()
@@ -43,6 +44,7 @@ class GatewayMqttClient(Client):
 
         self.initialized = True
         self.connected = False
+        self.attribute_request_id = 0
 
         return self
 
@@ -63,8 +65,9 @@ class GatewayMqttClient(Client):
         self.subscribe("v1/devices/me/attributes")
         self.subscribe("v2/fw/response/+")
 
-        self.publish('v1/devices/me/attributes/request/1', '{"sharedKeys":"sw_title,sw_url,sw_version,controller_config", "clientKeys":"files"}')
         self.connected = True
+        self.request_attributes({"sharedKeys": "sw_title,sw_url,sw_version,FILES"})
+        self.update_sys_info_attribute()
 
     def __on_disconnect(self, _client, _userdata, result_code) -> None:
         self.connected = False
@@ -100,6 +103,11 @@ class GatewayMqttClient(Client):
             return False
 
         return True
+
+    def request_attributes(self, request_dict: dict) -> bool:
+        self.attribute_request_id += 1
+        return self.publish_message_raw(f"v1/devices/me/attributes/request/{str(self.attribute_request_id)}",
+                                 json.dumps(request_dict))
 
     def publish_log(self, log_level, log_message, timestamp_ms = None) -> bool:
         time.sleep(1/1000) # sleep for 1ms to avoid duplicate timestamps
