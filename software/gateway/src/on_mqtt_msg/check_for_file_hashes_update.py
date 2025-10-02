@@ -23,6 +23,11 @@ def on_msg_check_for_file_hashes_update(msg_payload: Any) -> bool:
     file_defs = GatewayFileWriter().get_files()
     new_hashes = {}
 
+    for file_id in file_hashes:
+        if file_id not in file_defs:
+            warn(f"File {file_id} is no longer defined, removing from client attributes")
+            write_file_content_to_client_attribute(file_id, "")
+
     for file_id in file_defs:
         file_path = GatewayFileWriter().expand_file_path(get_maybe(file_defs, file_id, "path"))
         if file_path is None:
