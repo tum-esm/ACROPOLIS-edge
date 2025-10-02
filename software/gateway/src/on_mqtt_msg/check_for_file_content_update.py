@@ -36,8 +36,7 @@ def on_msg_check_for_file_content_update(msg_payload: Any) -> bool:
     file_encoding = get_maybe(file_definition, "encoding") or "text"
     if file_encoding == "json":
         if isinstance(input_file_content, dict):
-            file_content = json.dumps(input_file_content)
-            file_content = file_content.encode("utf-8")
+            file_content_bytes = json.dumps(input_file_content).encode("utf-8")
         else:
             error(f"Invalid file content for {file_id}, expected JSON object")
             return False
@@ -45,7 +44,7 @@ def on_msg_check_for_file_content_update(msg_payload: Any) -> bool:
         import base64
         if isinstance(input_file_content, str):
             try:
-                file_content = base64.b64decode(input_file_content)
+                file_content_bytes = base64.b64decode(input_file_content)
             except Exception as e:
                 error(f"Failed to decode base64 content for {file_id}: {e}")
                 return False
@@ -55,18 +54,23 @@ def on_msg_check_for_file_content_update(msg_payload: Any) -> bool:
     elif file_encoding == "text":
         if isinstance(input_file_content, str):
             # encode as utf-8 bytes
-            file_content = input_file_content.encode("utf-8")
+            file_content_bytes = input_file_content.encode("utf-8")
         else:
             error(f"Invalid file content for {file_id}, expected text string")
             return False
     else:
         error(f"Unknown content encoding for {file_id}: {file_encoding}")
         return False
+    
 
     file_write_version = get_maybe(file_definition, "write_version")
     file_path = GatewayFileWriter().expand_file_path(get_maybe(file_definition, "path"))
     create_if_not_exist = get_maybe(file_definition, "create_if_not_exist") in [None, True, "True"]
     restart_controller_on_change = get_maybe(file_definition, "restart_controller_on_change") in [True, "True"]
+
+    if file_path is None:
+        error(f"File definition for {file_id} has no path, unable to write file content update")
+        return True
 
     # check if file already exists, if not, check if it should be created
     if file_exists(file_path) or create_if_not_exist:
@@ -74,7 +78,7 @@ def on_msg_check_for_file_content_update(msg_payload: Any) -> bool:
         try:
             # write content to file
             with open(file_path, "wb") as f:
-                f.write(file_content)
+                f.write(file_content_bytes)
             # calculate new file hash and update it to ThingsBoard
             file_content_hash = GatewayFileWriter().calc_file_hash(file_path)
             file_hashes = GatewayFileWriter().get_tb_file_hashes()

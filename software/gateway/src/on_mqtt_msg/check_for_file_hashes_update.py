@@ -1,6 +1,6 @@
 import json
 import os
-from modules.logging import info, error
+from modules.logging import info, error, warn
 from modules.file_writer import GatewayFileWriter, write_file_content_to_client_attribute
 from typing import Any
 import utils
@@ -25,6 +25,9 @@ def on_msg_check_for_file_hashes_update(msg_payload: Any) -> bool:
 
     for file_id in file_defs:
         file_path = GatewayFileWriter().expand_file_path(get_maybe(file_defs, file_id, "path"))
+        if file_path is None:
+            warn(f"File definition for {file_id} has no path, skipping")
+            continue
         file_encoding = get_maybe(file_defs, file_id, "encoding") or "text"
         previous_file_hash = get_maybe(file_hashes, file_id, "hash")
         current_file_hash = GatewayFileWriter().calc_file_hash(file_path)

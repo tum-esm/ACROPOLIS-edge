@@ -14,9 +14,9 @@ def write_file_content_to_client_attribute(file_identifier: str, file_content: s
 
 
 class GatewayFileWriter:
-    files = None
-    hashes = {}
-    tb_hashes = None
+    files: Optional[dict] = None
+    hashes: dict[str, str] = {}
+    tb_hashes: Optional[dict] = None
 
     def __init__(self) -> None:
         global singleton_instance
@@ -32,13 +32,14 @@ class GatewayFileWriter:
             return singleton_instance
         return super(GatewayFileWriter, cls).__new__(cls)
 
-    def expand_file_path(self, file_path: str|None) -> str | None:
-        if file_path is not None:
-            return ((file_path.replace("%DATA_PATH%", CONTROLLER_DATA_PATH)
-                .replace("$DATA_PATH$", CONTROLLER_DATA_PATH))
-                .replace("$DATA_PATH", CONTROLLER_DATA_PATH))
-        else:
+    def expand_file_path(self, file_path: Optional[str]) -> Optional[str]:
+        if file_path is None:
             return None
+
+        return ((file_path.replace("%DATA_PATH%", CONTROLLER_DATA_PATH)
+            .replace("$DATA_PATH$", CONTROLLER_DATA_PATH))
+            .replace("$DATA_PATH", CONTROLLER_DATA_PATH))
+
 
     def set_files(self, files: dict) -> None:
         self.files = files
@@ -65,33 +66,21 @@ class GatewayFileWriter:
             return None
 
         if file_encoding == "text" or file_encoding == "json":
-            file_content = file_content.decode("utf-8")
+            return file_content.decode("utf-8")
         elif file_encoding == "base64":
             import base64
-            file_content = base64.b64encode(file_content).decode("utf-8")
+            return base64.b64encode(file_content).decode("utf-8")
         else:
             error(f"Unknown file encoding: {file_encoding}, defaulting to text")
-            file_content = file_content.decode("utf-8")
+            return file_content.decode("utf-8")
 
-        return file_content
-
-
-    def overwrite_file_content(self, identifier, content):
-        if self.files is None:
-            raise Exception("Files definition is not available")
-        if identifier not in self.files:
-            raise Exception(f"File with identifier '{identifier}' not found")
-        with open(self.files[identifier], "w") as f:
-            f.write(content)
-        write_file_content_to_client_attribute(identifier, self.read_file(self.files[identifier]))
-
-    def calc_file_hash(self, path: str):
+    def calc_file_hash(self, path: str) -> str:
         file_content = self.read_file_raw(path)
         if file_content is None:
             return "E_NOFILE"
         return md5(file_content).hexdigest()
 
-    def did_file_change(self, path: str):
+    def did_file_change(self, path: str) -> bool:
         file_hash = self.calc_file_hash(path)
         if path not in self.hashes:
             self.hashes[path] = file_hash
@@ -101,10 +90,10 @@ class GatewayFileWriter:
             return True
         return False
 
-    def get_files(self):
+    def get_files(self) -> dict:
         if self.files is None:
             raise Exception("Files definition is not available")
         return self.files
 
-    def get_tb_file_hashes(self):
+    def get_tb_file_hashes(self) -> Optional[dict]:
         return self.tb_hashes
