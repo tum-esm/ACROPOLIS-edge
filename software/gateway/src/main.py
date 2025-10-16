@@ -97,6 +97,21 @@ try:
                 );
             """)
         archive_sqlite_db.execute("CREATE INDEX IF NOT EXISTS controller_archive_ts_index on controller_archive (timestamp_ms);")
+        communication_sqlite_db.execute(f"""
+            CREATE TABLE IF NOT EXISTS {sqlite.SqliteTables.CONTROLLER_MESSAGES.value} (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                type text,
+                message text
+            );
+        """)
+        communication_sqlite_db.execute(f"""      
+            CREATE TABLE IF NOT EXISTS {sqlite.SqliteTables.PENDING_MQTT_MESSAGES.value} (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                type text,
+                message text
+            );
+        """)
+
 
         # create and run the mqtt client in a separate thread
         mqtt_client = GatewayMqttClient().init(access_token)
@@ -199,11 +214,39 @@ try:
                     gateway_logs_buffer_db.execute(f"DELETE FROM {"log_buffer"} WHERE id = {message[0][0]}")
                 continue
 
-            # check if there are any new outgoing mqtt messages in the sqlite db
+
             if communication_sqlite_db.do_table_values_exist(sqlite.SqliteTables.CONTROLLER_MESSAGES.value):
-                # fetch the next message (lowest `id`) from the queue and send it
+                # fetch the next message (lowest `id`) from the queue and process it
                 message = communication_sqlite_db.execute(
                     f"SELECT id, type, message FROM {sqlite.SqliteTables.CONTROLLER_MESSAGES.value} ORDER BY id LIMIT 1"
+                )
+                if len(message) > 0:
+                    message_type = message[0][1]
+                    message_obj = json.loads(message[0][2])
+                    message_timestamp_ms = message_obj["ts"]
+                    message_values = message_obj["values"]
+
+                    # archive controller messages in the archive sqlite db, except for log messages
+                    if not "log" in message_type:
+                        archive_sqlite_db.execute(
+                            "INSERT INTO controller_archive (timestamp_ms, message) VALUES (?, ?)",
+                            (message_timestamp_ms, json.dumps(message_values)))
+
+                    # add message to sqlite table containing pending outgoing mqtt messages
+                    communication_sqlite_db.execute(
+                        "INSERT INTO " + sqlite.SqliteTables.PENDING_MQTT_MESSAGES.value + " (type, message) VALUES (?, ?)",
+                        (message[0][1], message[0][2]))
+
+                    # remove the published message from the queue
+                    communication_sqlite_db.execute(
+                        f"DELETE FROM {sqlite.SqliteTables.CONTROLLER_MESSAGES.value} WHERE id = {message[0][0]}")
+                continue
+
+            # check if there are any new outgoing mqtt messages in the sqlite db
+            if communication_sqlite_db.do_table_values_exist(sqlite.SqliteTables.PENDING_MQTT_MESSAGES.value):
+                # fetch the next message (lowest `id`) from the queue and send it
+                message = communication_sqlite_db.execute(
+                    f"SELECT id, type, message FROM {sqlite.SqliteTables.PENDING_MQTT_MESSAGES.value} ORDER BY id LIMIT 1"
                 )
                 if len(message) > 0:
                     message_type = message[0][1]
@@ -212,15 +255,9 @@ try:
                     if not mqtt_client.publish_telemetry(message[0][2]):
                         continue
 
-                    # archive controller messages in the archive sqlite db, except for log messages
-                    if not "log" in message_type:
-                        message_timestamp_ms = message_obj["ts"]
-                        message_values = message_obj["values"]
-                        archive_sqlite_db.execute("INSERT INTO controller_archive (timestamp_ms, message) VALUES (?, ?)", (message_timestamp_ms, json.dumps(message_values)))
-
                     # remove the published message from the queue
                     communication_sqlite_db.execute(
-                        f"DELETE FROM {sqlite.SqliteTables.CONTROLLER_MESSAGES.value} WHERE id = {message[0][0]}")
+                        f"DELETE FROM {sqlite.SqliteTables.PENDING_MQTT_MESSAGES.value} WHERE id = {message[0][0]}")
                 continue
 
             controller_running_since_ts = docker_client.get_edge_startup_timestamp_ms() or 0

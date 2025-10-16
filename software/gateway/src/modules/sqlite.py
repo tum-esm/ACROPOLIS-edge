@@ -12,6 +12,7 @@ from modules.logging import info
 class SqliteTables(Enum):
     CONTROLLER_MESSAGES = "messages"
     HEALTH_CHECK = "health_check"
+    PENDING_MQTT_MESSAGES = "pending_mqtt_messages"
 
 
 class SqliteConnection:
