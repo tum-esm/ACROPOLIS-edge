@@ -163,7 +163,7 @@ class GatewayDockerClient:
             name=CONTROLLER_CONTAINER_NAME,
             restart_policy={
                 "Name": "always",
-                "MaximumRetryCount": 0
+                "MaximumRetryCount": 3
             },
             log_config=LogConfig(type=LogConfig.types.JSON, config={
                 "max-size": "10m",

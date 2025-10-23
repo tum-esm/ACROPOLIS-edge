@@ -22,6 +22,7 @@ from on_mqtt_msg.check_for_files_definition_update import on_msg_check_for_files
 from on_mqtt_msg.check_for_ota_updates import on_msg_check_for_ota_update
 from on_mqtt_msg.on_rpc_request import on_rpc_request
 from self_provisioning import self_provisioning_get_access_token
+from utils.controller_restart import restart_controller_if_needed
 from utils.misc import get_maybe
 
 global_mqtt_client : Optional[GatewayMqttClient] = None
@@ -29,14 +30,15 @@ archive_sqlite_db = None
 communication_sqlite_db = None
 gateway_logs_buffer_db = None
 STOP_MAINLOOP = False
-AUX_DATA_PUBLISH_INTERVAL_MS = 20_000 # evey 20 seconds
+AUX_DATA_PUBLISH_INTERVAL_MS = 20_000 # every 20 seconds
 aux_data_publish_ts = None
+
 
 # Set up signal handling for safe shutdown
 def shutdown_handler(sig: Any, _frame: Any) -> None:
     global STOP_MAINLOOP
     """Handle program exit gracefully"""
-    # Set a timer to force exit if graceful shutdown fails
+    # Set a timer to force exit if a graceful shutdown fails
     signal.setitimer(signal.ITIMER_REAL, 20)
 
     info("GRACEFUL SHUTDOWN")
@@ -63,10 +65,10 @@ def forced_shutdown_handler(_sig: Any, _frame: Any) -> None:
 
 def get_last_controller_health_check_ts():
     if communication_sqlite_db.do_table_values_exist(sqlite.SqliteTables.HEALTH_CHECK.value):
-        last_controller_health_check_ts = communication_sqlite_db.execute(
+        last_controller_health_check_ts_result = communication_sqlite_db.execute(
             "SELECT timestamp_ms FROM health_check WHERE id = 1")
-        if len(last_controller_health_check_ts) > 0:
-            return last_controller_health_check_ts[0][0]
+        if len(last_controller_health_check_ts_result) > 0:
+            return last_controller_health_check_ts_result[0][0]
 
     return 0
 
@@ -175,24 +177,11 @@ try:
                         warn("[MAIN] Got invalid message: " + str(msg))
                         warn("[MAIN] Skipping invalid message...")
 
-                continue  # process next message
+                continue  # process the next message
 
             # automatically restart the controller's docker container if it is not running
-            if not docker_client.is_controller_running():
-                info("Controller is not running, starting new container in 10s...")
-                sleep(10)
-                last_launched_version = docker_client.get_last_launched_controller_version()
-                if last_launched_version is not None:
-                    docker_client.start_controller(last_launched_version)
-                    continue
-                else:
-                    error("Failed to determine last launched controller version, unable to start new container...")
-                    GatewayMqttClient().request_attributes({"sharedKeys": "sw_title,sw_url,sw_version"})
-                    GatewayMqttClient().publish_sw_state("UNKNOWN", "FAILED",
-                        "No previous version known to launch from, requested version info from ThingsBoard")
-                    error("Requested controller version from Thingsboard. Delaying main loop by 20s...")
-                    sleep(20)  # it is unlikely that the version to build will be available immediately
-                    continue
+            if restart_controller_if_needed():
+                continue
 
             if not mqtt_client_thread.is_alive() or not mqtt_client.is_connected():
                 if not mqtt_client.is_connected():
@@ -202,7 +191,7 @@ try:
                 sleep(30)
                 utils.misc.fatal_error("MQTT client thread died")
 
-            # check if there are any buffered outgoing log message in the buffer sqlite db
+            # check if there is any buffered outgoing log message in the buffer sqlite db
             if gateway_logs_buffer_db.do_table_values_exist("log_buffer"):
                 # fetch the next message (lowest `id`) from the queue and send it
                 message = gateway_logs_buffer_db.execute(
@@ -274,7 +263,9 @@ try:
                     }
                 }))
 
-            if max(last_controller_health_check_ts, controller_running_since_ts) < int(time_ns() / 1_000_000) - (6 * 3600_000):
+            if (max(last_controller_health_check_ts, controller_running_since_ts)
+                    < int(time_ns() / 1_000_000) - (6 * 3600_000)
+                    and docker_client.is_controller_running()):
                 warn("Controller did not send health check in the last 6 hours, stopping container...")
                 docker_client.stop_controller()
                 continue

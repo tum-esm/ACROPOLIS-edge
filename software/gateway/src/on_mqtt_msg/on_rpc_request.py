@@ -16,6 +16,7 @@ from modules.mqtt import GatewayMqttClient
 from modules.logging import info, error, debug
 from on_mqtt_msg.check_for_file_hashes_update import FILE_HASHES_TB_KEY
 
+import utils.controller_restart
 
 def rpc_reboot(rpc_msg_id: str, _method: Any, _params: Any):
     """Reboot the device"""
@@ -42,6 +43,7 @@ def rpc_restart_controller(rpc_msg_id: str, _method: Any, _params: Any):
     send_rpc_response(rpc_msg_id, "OK - Restarting Controller")
     sleep(3)
     GatewayDockerClient().stop_controller()
+    utils.controller_restart.last_container_restart_ts = 0 # restart the container immediately
 
 def rpc_ping(rpc_msg_id: str, _method: Any, _params: Any):
     info("[RPC] Pong")
