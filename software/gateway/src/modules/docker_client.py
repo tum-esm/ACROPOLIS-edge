@@ -114,6 +114,12 @@ class GatewayDockerClient:
         self.docker_client.containers.prune()
         info("[DOCKER-CLIENT] Pruned containers")
 
+    def start_controller_safely(self, version_to_launch: str):
+        try:
+            self.start_controller(version_to_launch)
+        except Exception as e:
+            warn("[DOCKER-CLIENT] Failed to start controller: {}".format(e))
+
     def start_controller(self, version_to_launch: str) -> None:
         if self.is_controller_running():
             running_controller_version = self.get_controller_version()

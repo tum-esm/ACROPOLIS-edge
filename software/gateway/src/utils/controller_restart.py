@@ -22,7 +22,7 @@ def restart_controller_if_needed():
             sleep(10)
             last_launched_version = docker_client.get_last_launched_controller_version()
             if last_launched_version is not None:
-                docker_client.start_controller(last_launched_version)
+                docker_client.start_controller_safely(last_launched_version)
                 return True
             else:
                 error("Failed to determine last launched controller version, unable to start new container...")
