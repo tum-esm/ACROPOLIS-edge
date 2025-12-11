@@ -1,5 +1,5 @@
-# using base-image containing python3.9, setting shell to use bash by default, switching to /root folder
-FROM python:3.12 as build_image
+# using base-image containing python3.12.11, setting shell to use bash by default, switching to /root folder
+FROM python:3.12.11 as build_image
 SHELL ["/bin/bash", "-c"]
 WORKDIR /root
 
@@ -26,7 +26,7 @@ COPY config/config.template.json ./config/config.json
 
 RUN echo 'ACROPOLIS_HARDWARE_LOCKFILE_PATH="/root/acropolis_hardware.lock"' > ./config/.env
 
-FROM python:3.12-slim
+FROM python:3.12.11-slim
 
 WORKDIR /root
 COPY --from=build_image /root/.venv /root/.venv
