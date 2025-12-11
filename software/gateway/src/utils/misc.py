@@ -30,7 +30,9 @@ def fatal_error(msg) -> None:
 
     error(f'FATAL ERROR: {error_msg}')
     sys.stdout.flush()
-    sleep(1)
+
+    # sleep 20s
+    sleep(20)
 
     # Trigger the graceful shutdown handler
     signal.raise_signal( signal.SIGINT )
