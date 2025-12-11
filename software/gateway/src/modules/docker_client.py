@@ -162,7 +162,6 @@ class GatewayDockerClient:
             detach=True,
             name=CONTROLLER_CONTAINER_NAME,
             restart_policy={
-                "Name": "always",
                 "MaximumRetryCount": 3
             },
             log_config=LogConfig(type=LogConfig.types.JSON, config={
