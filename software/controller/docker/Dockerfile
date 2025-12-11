@@ -1,11 +1,7 @@
 # using base-image containing python3.12.11, setting shell to use bash by default, switching to /root folder
-FROM python:3.12.11 as build_image
+FROM python:3.12.11 AS build_image
 SHELL ["/bin/bash", "-c"]
 WORKDIR /root
-
-# install jq and moreutils (-> sponge)
-RUN apt update
-RUN apt install -y jq moreutils
 
 # install poetry and set up a venv
 RUN python3.12 -m pip install --upgrade pip
