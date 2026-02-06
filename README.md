@@ -2,6 +2,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python Version](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/release/python-3120/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15849217.svg)](https://doi.org/10.5281/zenodo.15849217)
+
 [![mypy](https://github.com/tum-esm/ACROPOLIS-edge/actions/workflows/test-controller.yaml/badge.svg)](https://github.com/tum-esm/ACROPOLIS-edge/actions)
 [![mypy](https://github.com/tum-esm/ACROPOLIS-edge/actions/workflows/test-gateway.yaml/badge.svg)](https://github.com/tum-esm/ACROPOLIS-edge/actions)
 
@@ -25,13 +26,6 @@ This repository contains the software and hardware blueprints for the measuremen
 - **Edge Controller**: An autonumous software managing sensors and actors and running within a Docker container for isolated and consistent deployment.
 - **Edge Gateway**: A standalone process managing the active edge controller container version, implementing a MQTT client to act as a communication gateway, and acting as the endpoint for remote commands.
 
-<br/>
-
-## Repository Overview
-
-- Docs
-- Setup
-- Software
 
 <br/>
 
@@ -49,7 +43,12 @@ Each edge system is managed by a Raspberry Pi 4, utilizing an LTE hat (NB-IoT) f
 
 ## Related Work
 
-Aigner et. al.: Advancing Urban Greenhouse Gas Monitoring: Development and Evaluation of a High-Density CO2 Sensor Network in Munich. ICOS Science Conference 2024, Versailles, France, 10.-12. Sept, [Link](https://www.icos-cp.eu/news-and-events/science-conference/icos2024sc/all-abstracts)
+📘 **Peer‑reviewed publication (AMT, 2026)**  
+Aigner, P., Chen, J., Böhm, F., Chariot, M., Emmenegger, L., Frölich, L., Grange, S., Kühbacher, D., Kürzinger, K., Laurent, O., Makowski, M., Rubli, P., Schmitt, A., and Wenzel, A.: ACROPOLIS: Munich urban CO2 sensor network, Atmos. Meas. Tech., 19, 745–773, https://doi.org/10.5194/amt-19-745-2026, 2026.
+
+🎤 **Conference Talk (ICOS Science Conference, 2024)**  
+Aigner, P., Kühbacher, D., Wenzel, A., Schmitt, A., Böhm, F., Makowski, M., Kürzinger, K., Laurent, O., Rubli, P., Grange, S., Emmenegger, L., and Chen, J.: Advancing Urban Greenhouse Gas Monitoring: Development and Evaluation of a High-Density CO2 Sensor Network in Munich. ICOS Science Conference 2024, Versailles, France, 10.-12. Sept, https://www.icos-cp.eu/news-and-events/science-conference/icos2024sc/all-abstracts
+
 
 <br/>
 
