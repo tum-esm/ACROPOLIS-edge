@@ -1,8 +1,7 @@
 # ACROPOLIS CO<sub>2</sub> Sensor Network
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python Version](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/release/python-3120/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15849217.svg)](https://doi.org/10.5281/zenodo.15849217)
-
+[![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.20525230-blue)](https://doi.org/10.5281/zenodo.20525230)
 [![mypy](https://github.com/tum-esm/ACROPOLIS-edge/actions/workflows/test-controller.yaml/badge.svg)](https://github.com/tum-esm/ACROPOLIS-edge/actions)
 [![mypy](https://github.com/tum-esm/ACROPOLIS-edge/actions/workflows/test-gateway.yaml/badge.svg)](https://github.com/tum-esm/ACROPOLIS-edge/actions)
 
