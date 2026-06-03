@@ -11,7 +11,7 @@ authors:
   given-names: "Jia"
   orcid: "https://orcid.org/0000-0002-6350-6610"
 title: "ACROPOLIS-edge"
-version: 0.0.95
-doi: 10.5281/zenodo.15849217
-date-released: 2025-07-17
+version: 1.0.0
+doi: 10.5281/zenodo.20525230
+date-released: 2026-06-03
 url: "https://github.com/tum-esm/ACROPOLIS-edge"
