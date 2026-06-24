@@ -1,30 +1,43 @@
 services:
-  thingsboard:
-    container_name: thingsboard
+  postgres:
     restart: always
-    image: "thingsboard/tb-postgres"
-    ports:
-      - "127.0.0.1:8088:8088"
-      - "127.0.0.1:1883:1883"
+    image: "postgres:16"
+    network_mode: host
+    environment:
+      POSTGRES_DB: thingsboard
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - /mnt/tb_data/postgresdb:/var/lib/postgresql/data
+
+  thingsboard:
+    restart: always
+    image: "thingsboard/tb-node:4.2.1"
+    network_mode: host
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
     environment:
       HTTP_BIND_PORT: 8088
       TB_QUEUE_TYPE: kafka
-      TB_KAFKA_SERVERS: kafka:9094
+      TB_KAFKA_SERVERS: 127.0.0.1:9094
       LISTENER_TCP_BIND_PORT: 1883
       SSL_ENABLED: false
+      SPRING_DATASOURCE_URL: jdbc:postgresql://127.0.0.1:5432/thingsboard
+      #SPRING_DATASOURCE_USERNAME: thingsboard
     volumes:
-      - ~/data/thingsboard_data/data:/data
-      - ~/data/thingsboard_data/logs:/var/log/thingsboard
+      - /root/data/thingsboard_data/data:/data
+      - /root/data/thingsboard_data/logs:/var/log/thingsboard
+      - /root/data/thingsboard_config:/config
 
   kafka:
-    container_name: kafka
     restart: always
-    image: bitnami/kafka:3.5.2
-    expose:
-        - "9094"
+    image: "bitnamilegacy/kafka:3.5.1"
+    network_mode: host
     environment:
       ALLOW_PLAINTEXT_LISTENER: "yes"
-      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://kafka:9094"
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://127.0.0.1:9094"
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT"
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
       KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "false"
@@ -37,5 +50,4 @@ services:
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "0@127.0.0.1:9093" #KRaft
       KAFKA_CFG_LOG_RETENTION_HOURS: "48"
     volumes:
-      - ~/data/kafka:/bitnami
-
+      - /root/data/kafka:/bitnami
