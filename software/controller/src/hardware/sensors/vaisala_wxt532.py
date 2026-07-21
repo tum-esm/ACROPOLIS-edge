@@ -182,7 +182,7 @@ class VaisalaWXT532(Sensor):
             f"Processed {len(wind_measurements)} wind sensor measurements.")
         return sensor_types.WindSensorData(
             direction_min=min(m.direction_min for m in wind_measurements),
-            direction_avg=list_operations.avg_list(
+            direction_avg=list_operations.circular_mean_degrees(
                 [m.direction_avg for m in wind_measurements], 1),
             direction_max=max(m.direction_max for m in wind_measurements),
             speed_min=min(m.speed_min for m in wind_measurements),
@@ -192,6 +192,7 @@ class VaisalaWXT532(Sensor):
             last_update_time=max(m.last_update_time
                                  for m in wind_measurements),
         )
+        #TODO: Implement Max/Min function that works for wind direction to avoid issues with wrap-around at 0/360 degrees.
 
     def _check_errors(self) -> None:
         """
