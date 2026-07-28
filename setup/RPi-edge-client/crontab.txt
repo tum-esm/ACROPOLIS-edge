@@ -1,7 +1,19 @@
-PATH=/usr/sbin:/usr/bin:/sbin:/bin
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+HOME=/root
+
+# GSM Modem
+@reboot sleep 60 && sudo -b /home/pi/SIM8200_for_RPI/Goonline/simcom-cm
+@reboot sudo -b udhcpc -i wwan0 -b
+
+# Reboot on connectivity loss
+@daily /bin/bash /home/pi/acropolis/network_lost_reboot_trigger.sh
 
 # Docker
 @daily docker system prune -a --force --filter "until=8760h"
 
 # Delete old log files (older than 100 days)
 @daily /usr/bin/find /home/pi/acropolis/logs/ -type f -mtime +100 -delete
+
+# Reboot when disk space >90% AND last reboot longer than 1 week
+*/1 * * * * if [ "$(df / | awk 'NR==2 {gsub(/%/,""); print $5}')" -ge 90 ] && [ "$(awk '{print int($1)}' /proc/uptime)" -ge 604800 ]; then sudo reboot; fi
