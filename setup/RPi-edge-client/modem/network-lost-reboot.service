@@ -1,7 +1,0 @@
-[Unit]
-Description=Reboot if system-wide connectivity is down (last resort)
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/network-lost-reboot.sh
-User=root
