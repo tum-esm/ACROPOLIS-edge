@@ -7,13 +7,14 @@ readme = "README.md"
 package-mode=false
 
 [tool.poetry.dependencies]
-python = "^3.13.5"
+python = "^3.12.4"
 smbus2 = "^0.4.2"
 rpi-bme280 = "^0.2.4"
 filelock = "^3.9.0"
 pytest-ordering = "^0.6"
 click = "^8.1.3"
 adafruit-circuitpython-sht4x = "^1.0.15"
+gpiozero = "^2.0.1"
 psutil = "^6.0.0"
 pydantic = "^2.9.2"
 python-dotenv = "^1.0.1"
@@ -21,7 +22,6 @@ pytest = "^8.3.3"
 simple-pid = "2.0.1"
 pytz = "^2024.2"
 numpy = "^2.2.2"
-gpiozero = "^2.0.1.post3"
 
 
 [tool.poetry.group.dev]
