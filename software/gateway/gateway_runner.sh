@@ -10,7 +10,7 @@ cd $ACROPOLIS_GATEWAY_DIR
 
 echo "Removing old virtual environment and creating a new one"
 rm -rf .venv
-python3.12 -m venv --copies .venv
+python3.13 -m venv --copies .venv
 source .venv/bin/activate
 
 echo "Installing dependencies in the virtual environment"
