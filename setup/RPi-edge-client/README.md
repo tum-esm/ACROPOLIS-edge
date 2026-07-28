@@ -69,19 +69,11 @@ sudo usermod -aG docker $USER
 sudo reboot
 ```
 
-## 4. Install Python 3.12
+## 4. Install Poetry
 
 ```bash
-wget https://www.python.org/ftp/python/3.12.8/Python-3.12.8.tgz
-sudo tar zxf Python-3.12.8.tgz
-cd Python-3.12.8
-sudo ./configure --enable-optimizations --enable-loadable-sqlite-extensions
-sudo make -j 4
-sudo make install
-curl -sSL https://install.python-poetry.org/ | python3.12 -
+curl -sSL https://install.python-poetry.org/ | python3.13 -
 ```
-
-Note. Building Python 3.12 may take a while. Raspberry Pi OS Lite (64-bit, Debian 12), already comes with Python 3.11. If you want to skip this step, you can adjust the scripts to use Python 3.11 instead of 3.12. (Not properly tested/integrated).
 
 ## Reduce Log Sizes
 
@@ -95,6 +87,8 @@ SystemMaxFileSize=50M
 ## 5. Configure Modem
 
 ### **AT Commands for Modem Setup**
+
+(only needed if a new modem is used or if the modem is reset to factory settings)
 
 ```bash
 sudo minicom -D /dev/ttyS0
@@ -116,7 +110,7 @@ AT+CNMP=38
 
 ```bash
 cd /home/pi
-wget https://www.waveshare.net/w/upload/8/89/SIM8200_for_RPI.7z
+wget https://www.waveshare.com/w/upload/8/89/SIM8200_for_RPI.7z
 7z x SIM8200_for_RPI.7z -r -o./SIM8200_for_RPI
 cd SIM8200_for_RPI/Goonline
 make clean && make
@@ -130,26 +124,15 @@ sudo chmod 777 -R SIM8200_for_RPI
 
 ## 6. Set Up Networking & System Automation
 
-### **Install and Configure UDHCPC**
-
-```bash
-cd /home/pi/acropolis/setup/RPi-edge-client
-sudo cp modem/default.script /usr/share/udhcpc/
-sudo chmod 755 /usr/share/udhcpc/default.script
-```
-
-In case of permission issues, run:
-```bash
-sudo chmod 0777 /usr/share/udhcpc/default.script
-```
 
 ### **Create acropolis folder**
 
 ```bash
 sudo mkdir -p /home/pi/acropolis/
-git clone https://github.com/tum-esm/ACROPOLIS-edge.git /home/pi/acropolis/acropolis-edge
+cd /home/pi/acropolis/
+sudo git clone https://github.com/tum-esm/ACROPOLIS-edge.git /home/pi/acropolis/acropolis-edge
 sudo git config --system --add safe.directory '*'
-cd /home/pi/acropolis/setup/RPi-edge-client
+cd /home/pi/acropolis/acropolis-edge/setup/RPi-edge-client
 sudo cp run_dockerized_gateway.sh /home/pi/acropolis/
 sudo chmod a+x /home/pi/acropolis/run_dockerized_gateway.sh
 ```
@@ -162,83 +145,36 @@ sudo crontab -e
 
 Paste content of `crontab.txt` file.
 
-# Setup PIGPIO Daemon
 
-```bash
-sudo nano /etc/systemd/system/pigpiod.service
-```
-
-## Enable services
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now pigpiod.service
-```
-
-Paste content of `pigpiod.service` file.
-
-```bash
-systemctl status pigpiod.service
-journalctl -u pigpiod.service -f
-```
-
-# Setup Demons for Modem Management
+# Setup Script for Modem Recovery
 
 ## Create sh script
 ```bash
-sudo nano /usr/local/bin/modem-keepalive.sh
-sudo nano /usr/local/bin/network-lost-reboot.sh
+sudo nano /usr/local/bin/network_lost_reboot_trigger.sh
 ```
 
-From `/modem/` directory, paste content of `modem-keepalive.sh` and `network-lost-reboot.sh` files.
+From `/modem/` directory, paste content of `network_lost_reboot_trigger.sh` file.
 
 ## Enable executable
 ```bash
-sudo chmod +x /usr/local/bin/modem-keepalive.sh
-sudo chmod +x /usr/local/bin/network-lost-reboot.sh
-```
-
-## Create systemd service files
-```bash
-sudo nano /etc/systemd/system/modem-keepalive.service
-sudo nano /etc/systemd/system/simcom-cm.service
-sudo nano /etc/systemd/system/network-lost-reboot.service
-sudo nano /etc/systemd/system/network-lost-reboot.timer
-```
-
-From `/modem/` directory, paste content of `modem-keepalive.service`, `simcom-cm.service`, `network-lost-reboot.service` and `network-lost-reboot.timer` files.
-
-## Enable services
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now simcom-cm.service
-sudo systemctl enable --now modem-keepalive.service
-sudo systemctl enable --now network-lost-reboot.timer
-```
-
-```bash
-systemctl status modem-keepalive.service
-journalctl -u modem-keepalive.service -f
-```
-
-```bash
-systemctl list-units --type=service --state=running
+sudo chmod +x /usr/local/bin/network_lost_reboot_trigger.sh
 ```
 
 # Setup Gateway
 
 ```bash
 cd /home/pi
-mkdir -p /home/pi/acropolis/data
-mkdir -p /home/pi/acropolis/logs
+sudo mkdir -p /home/pi/acropolis/data
+sudo mkdir -p /home/pi/acropolis/logs
 ```
 
 ### **Clone and Build Gateway**
 
 ```bash
 cd /home/pi/acropolis/acropolis-edge/software/gateway
-sudo ./build_gateway_runner_docker_image.sh
+sudo bash build_gateway_runner_docker_image.sh
 cd /home/pi/acropolis
-sudo nano run_dockerized_gateway.sh # Update `THINGSBOARD_PROVISION_*` environment parameters
+sudo nano run_dockerized_gateway.sh # Update `THINGSBOARD_PROVISION_*` environment parameters (Thingsboard -> Device Profile -> Name -> Device Provisioning)
 ```
 
 (Optional) Skip if you want to create an template image for multiple systems
