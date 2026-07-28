@@ -1,22 +1,28 @@
-import gpiozero.pins.pigpio
-import pigpio
+from __future__ import annotations
 
-pigpio.exceptions = False
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from gpiozero.pins import Factory
 
 
-def get_gpio_pin_factory() -> gpiozero.pins.pigpio.PiGPIOFactory:
-    """
-    Connects to the active pipiod deamon running on the Pi over network socket.
-    Documentation: https://gpiozero.readthedocs.io/en/latest/api_pins.html#gpiozero.pins.pigpio.PiGPIOFactory
+def get_gpio_pin_factory() -> Factory:
+    """Create the local GPIO Zero pin factory.
+
+    Raspberry Pi OS Trixie uses the ``lgpio`` backend to access GPIO pins
+    directly. No ``pigpiod`` daemon is required.
     """
 
     try:
-        pin_factory = gpiozero.pins.pigpio.PiGPIOFactory(host="127.0.0.1")
-        assert pin_factory.connection is not None
-        assert pin_factory.connection.connected
-    except:
+        from gpiozero.pins.lgpio import LGPIOFactory
+    except ImportError as error:
         raise ConnectionError(
-            'pigpio is not connected, please run "sudo pigpiod -n 127.0.0.1"')
-    return pin_factory
+            "The lgpio backend is unavailable. Install the 'python3-lgpio' package."
+        ) from error
 
-
+    try:
+        return LGPIOFactory()
+    except Exception as error:
+        raise ConnectionError(
+            "Failed to initialize the local GPIO backend."
+        ) from error

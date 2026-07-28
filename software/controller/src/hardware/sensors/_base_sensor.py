@@ -1,14 +1,15 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-import time
 import random
-from typing import Any, Optional
-try:
-    import gpiozero.pins.pigpio
-except Exception:
-    pass
+import time
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from gpiozero.pins import Factory
 
 from custom_types import config_types
-from interfaces import logging_interface, communication_queue
+from interfaces import communication_queue, logging_interface
 
 
 class Sensor(ABC):
@@ -16,15 +17,15 @@ class Sensor(ABC):
 
     class SensorError(Exception):
         """Raised when an error occurs in the sensor class."""
-        
 
     def __init__(
-            self,
-            config: config_types.Config,
-            communication_queue: communication_queue.CommunicationQueue,
-            max_retries: int = 3,
-            retry_delay: float = 0.5,
-            pin_factory: Optional[gpiozero.pins.pigpio.PiGPIOFactory] = None):
+        self,
+        config: config_types.Config,
+        communication_queue: communication_queue.CommunicationQueue,
+        max_retries: int = 3,
+        retry_delay: float = 0.5,
+        pin_factory: Factory | None = None,
+    ) -> None:
 
         # init parameters
         self.config = config

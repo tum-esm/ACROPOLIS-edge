@@ -1,8 +1,10 @@
-from typing import Any
-try:
-    import gpiozero
-except Exception:
-    pass
+
+from __future__ import annotations
+from typing import Any, TYPE_CHECKING
+import gpiozero
+
+if TYPE_CHECKING:
+    from gpiozero.pins import Factory
 
 from hardware.sensors._base_sensor import Sensor
 from custom_types import config_types, sensor_types
@@ -14,7 +16,7 @@ class PhoenixContactUPS(Sensor):
 
     def __init__(self, config: config_types.Config,
                  communication_queue: communication_queue.CommunicationQueue,
-                 pin_factory: gpiozero.pins.pigpio.PiGPIOFactory):
+                 pin_factory: Factory,) -> None:
         super().__init__(config=config,
                          communication_queue=communication_queue,
                          pin_factory=pin_factory)
