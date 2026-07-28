@@ -152,14 +152,14 @@ Paste content of `crontab.txt` file.
 
 ## Create sh script
 ```bash
-sudo nano /usr/local/bin/network_lost_reboot_trigger.sh
+sudo nano /home/pi/acropolis/network_lost_reboot_trigger.sh
 ```
 
 From `/modem/` directory, paste content of `network_lost_reboot_trigger.sh` file.
 
 ## Enable executable
 ```bash
-sudo chmod +x /usr/local/bin/network_lost_reboot_trigger.sh
+sudo chmod +x /home/pi/acropolis/network_lost_reboot_trigger.sh
 ```
 
 # Setup PIGPIO Daemon
@@ -217,7 +217,7 @@ docker logs --tail 50 -f acropolis_edge_gateway
 ```json
 {
   "network-lost-reboot-sh": {
-    "path": "/usr/local/bin/network-lost-reboot.sh",
+    "path": "/home/pi/acropolis/network_lost_reboot_trigger.sh",
     "encoding": "base64"
   },
   "crontab": {
@@ -340,6 +340,7 @@ diskutil list
 diskutil umountDisk /dev/disk[*]
 sudo dd status=progress bs=4M  if=/dev/disk[*] | gzip > //Users/.../acropolis-edge-image.gz
 ```
+
 
 ## 10. Fast Setup for additional systems
 
