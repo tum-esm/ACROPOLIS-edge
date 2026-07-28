@@ -38,8 +38,9 @@ sudo apt install -y \
     build-essential libssl-dev libbz2-dev \
     libexpat1-dev liblzma-dev zlib1g-dev \
     libffi-dev openssl docker.io git \
-    tldr ncdu minicom pigpio libsqlite3-dev \
-    wget screen udhcpc
+    ncdu minicom libsqlite3-dev \
+    wget screen udhcpc \
+    python3-gpiozero python3-lgpio
 ```
 
 Enable **I2C Interface** using:
