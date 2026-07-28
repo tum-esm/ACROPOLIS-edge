@@ -8,7 +8,7 @@ This guide provides step-by-step instructions to set up a Raspberry Pi 4 as an e
 📁 RPi-edge-client
     📁 modem
         📄 default.script
-        📄 network-lost-reboot.sh
+        📄 network_lost_reboot_trigger.sh
     📄 config.txt
     📄 crontab.txt
     📄 run_dockerized_gateway.sh
