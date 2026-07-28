@@ -338,7 +338,7 @@ Remove SD Card and insert into personal computer
 ```bash
 diskutil list
 diskutil umountDisk /dev/disk[*]
-dd status=progress bs=4M  if=/dev/disk[*] | gzip > //Users/.../acropolis-edge-image.gz
+sudo dd status=progress bs=4M  if=/dev/disk[*] | gzip > //Users/.../acropolis-edge-image.gz
 ```
 
 ## 10. Fast Setup for additional systems
@@ -346,6 +346,9 @@ dd status=progress bs=4M  if=/dev/disk[*] | gzip > //Users/.../acropolis-edge-im
 Insert fresh SD Card into personal computer
 
 ### **Flash Image to SD Card**
+
+
+/Users/patrickaigner/Documents/AREAS/ACROPOLIS/SD-Backup/old
 
 ```bash
 diskutil list
