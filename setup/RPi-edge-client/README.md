@@ -24,7 +24,7 @@ This guide provides step-by-step instructions to set up a Raspberry Pi 4 as an e
 
 ## 1. Install Raspberry Pi OS
 
-- Download and install **Raspberry Pi OS Lite (64-bit)**.
+- Download and install **Raspberry Pi OS Lite (64-bit)**. (Raspberry Pi OS Trixie)
 - Configure **SSH, WiFi, and Hostname**.
 - Copy `config.txt` into the `bootfs` folder on the SD card.
 
