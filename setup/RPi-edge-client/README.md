@@ -50,6 +50,13 @@ sudo raspi-config
 # Navigate to: Interface Options → I2C → Enable
 ```
 
+Verify that python3.13 is installed:
+
+```bash
+python3.13 --version
+```
+
+
 ## 3. Set Up Docker
 
 Create a Docker daemon configuration file:
@@ -150,14 +157,14 @@ Paste content of `crontab.txt` file.
 
 ## Create sh script
 ```bash
-sudo nano /usr/local/bin/network_lost_reboot_trigger.sh
+sudo nano /usr/local/bin/network-lost-reboot.sh
 ```
 
 From `/modem/` directory, paste content of `network_lost_reboot_trigger.sh` file.
 
 ## Enable executable
 ```bash
-sudo chmod +x /usr/local/bin/network_lost_reboot_trigger.sh
+sudo chmod +x /usr/local/bin/network-lost-reboot.sh
 ```
 
 # Setup Gateway
@@ -180,9 +187,130 @@ sudo nano run_dockerized_gateway.sh # Update `THINGSBOARD_PROVISION_*` environme
 (Optional) Skip if you want to create an template image for multiple systems
 
 ```bash
+cd /home/pi/acropolis/
 ./run_dockerized_gateway.sh #registers device with ThingsBoard and creates tb_access_token
 docker logs --tail 50 -f acropolis_edge_gateway
 ```
+
+### **Setup Thingsboard Shared Attributes**
+
+(1) Create a new shared attribute "FILES" in Thingsboard with content:
+
+
+```json
+{
+  "network-lost-reboot-sh": {
+    "path": "/usr/local/bin/network-lost-reboot.sh",
+    "encoding": "base64"
+  },
+  "crontab": {
+    "path": "/var/spool/cron/crontabs/root",
+    "encoding": "base64",
+    "write_version": 1
+  },
+  "controller_config": {
+    "path": "$DATA_PATH/config.json",
+    "encoding": "json",
+    "write_version": 1,
+    "restart_controller_on_change": true
+  },
+  "ssh_keys": {
+    "path": "/home/pi/.ssh/authorized_keys",
+    "encoding": "text"
+  }
+}
+```
+
+(2) Create a new shared attribute "FILE_CONTENT_controller_config" with content:
+
+```json
+{
+    "version": "1.0.0",
+    "local_time_zone": "Europe/Berlin",
+    "active_components": {
+        "run_controller": true,
+        "run_calibration_procedures": false,
+        "send_messages_over_mqtt": true,
+        "run_hardware_tests": false,
+        "run_sensor_heating_control": false, 
+        "perform_sht45_offset_correction": false,
+        "perform_co2_calibration_correction": false,
+        "log_to_file": true,
+        "log_to_console": true,
+        "simulation_mode": false
+    },
+    "calibration": {
+        "average_air_inlet_measurements": 15,
+        "calibration_frequency_days": 1,
+        "calibration_hour_of_day": 3,
+        "gas_cylinders": [
+            {
+                "valve_number": 2,
+                "bottle_id": "999"
+            },
+            {
+                "valve_number": 3,
+                "bottle_id": "998"
+            }
+        ],
+        "sampling_per_cylinder_seconds": 600,
+        "system_flushing_pump_pwm_duty_cycle": 0.5,
+        "system_flushing_seconds": 300,
+        "sht45_calibration_seconds": 60
+
+    },
+    "documentation": {
+        "site_name": "...",
+        "site_short_name": "...",
+        "site_observation_since": "...",
+        "inlet_elevation": "...",
+        "last_maintenance_date": "...",
+        "maintenance_comment": "...",
+        "gmp343_sensor_id": "..."
+    },
+    "hardware": {
+        "heat_box_heater_power_pin_out": 18,
+        "heat_box_heater_power_pin_frequency": 10000,
+        "heat_box_ventilator_power_pin_out": 26,
+        "heat_box_temperature_target": 40,
+        "heat_box_pid_kp": 1,
+        "heat_box_pid_ki": 0.1,
+        "heat_box_pid_kd": 0.05,
+        "pump_pwm_duty_cycle": 0.13,
+        "pump_power_pin_out": 19,
+        "pump_power_pin_frequency": 10000,
+        "pump_speed_pin_in": 16,
+        "gmp343_optics_heating": true,
+        "gmp343_linearisation": true,
+        "gmp343_temperature_compensation": true,
+        "gmp343_relative_humidity_compensation": true,
+        "gmp343_pressure_compensation": true,
+        "gmp343_oxygen_compensation": true,
+        "gmp343_filter_seconds_averaging": 10,
+        "gmp343_filter_smoothing_factor": 0,
+        "gmp343_filter_median_measurements": 0,
+        "gmp343_power_pin_out": 20,
+        "gmp343_serial_port": "/dev/ttySC0",
+        "wxt532_power_pin_out": 21,
+        "wxt532_serial_port": "/dev/ttySC1",
+        "valve_power_pin_1_out": 25,
+        "valve_power_pin_2_out": 24,
+        "valve_power_pin_3_out": 23,
+        "valve_power_pin_4_out": 22,
+        "ups_battery_charge_pin_in": 5,
+        "ups_power_mode_pin_in": 10,
+        "ups_alarm_pin_in": 7
+    },
+    "measurement": {
+        "average_air_inlet_measurements": 15,
+        "procedure_seconds": 120,
+        "valve_number": 1
+    }
+}
+```
+
+(3) Assign software version "1.0.1" in the device details page in Thingsboard.
+
 
 ## 8. Create & Flash SD Card Image
 
