@@ -8,12 +8,7 @@ This guide provides step-by-step instructions to set up a Raspberry Pi 4 as an e
 📁 RPi-edge-client
     📁 modem
         📄 default.script
-        📄 modem-keepalive.service
-        📄 modem-keepalive.sh
-        📄 network-lost-reboot.service
-        📄 network-lost-reboot.sh
-        📄 network-lost-reboot.timer
-        📄 simcom-cm.service
+        📄 network_lost_reboot_trigger.sh
     📄 config.txt
     📄 crontab.txt
     📄 run_dockerized_gateway.sh
@@ -157,14 +152,14 @@ Paste content of `crontab.txt` file.
 
 ## Create sh script
 ```bash
-sudo nano /usr/local/bin/network-lost-reboot.sh
+sudo nano /home/pi/acropolis/network-lost-reboot-trigger.sh
 ```
 
 From `/modem/` directory, paste content of `network_lost_reboot_trigger.sh` file.
 
 ## Enable executable
 ```bash
-sudo chmod +x /usr/local/bin/network-lost-reboot.sh
+sudo chmod +x /home/pi/acropolis/network-lost-reboot-trigger.sh
 ```
 
 # Setup Gateway
@@ -199,8 +194,8 @@ docker logs --tail 50 -f acropolis_edge_gateway
 
 ```json
 {
-  "network-lost-reboot-sh": {
-    "path": "/usr/local/bin/network-lost-reboot.sh",
+  "network-lost-reboot-trigger-sh": {
+    "path": "/home/pi/acropolis/network-lost-reboot-trigger.sh",
     "encoding": "base64"
   },
   "crontab": {
