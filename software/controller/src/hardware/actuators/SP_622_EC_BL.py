@@ -1,10 +1,14 @@
+from __future__ import annotations
 import time
-from typing import Any
+from typing import Any, TYPE_CHECKING
 try:
     import gpiozero
     import gpiozero.pins.pigpio
 except Exception:
     pass
+
+if TYPE_CHECKING:
+    from gpiozero.pins import Factory
 
 from hardware.actuators import _base_actuator
 from custom_types import config_types
@@ -18,7 +22,7 @@ class SchwarzerPrecisionPump(_base_actuator.Actuator):
         self,
         config: config_types.Config,
         communication_queue: communication_queue.CommunicationQueue,
-        pin_factory: gpiozero.pins.pigpio.PiGPIOFactory,
+        pin_factory: Factory | None = None,
         max_retries: int = 3,
         retry_delay: float = 0.5,
     ):

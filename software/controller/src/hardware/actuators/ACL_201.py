@@ -1,6 +1,10 @@
+from __future__ import annotations
 import time
-from typing import Literal, Any
+from typing import Literal, Any, TYPE_CHECKING
 import gpiozero
+
+if TYPE_CHECKING:
+    from gpiozero.pins import Factory
 
 from hardware.actuators import _base_actuator
 from custom_types import config_types
@@ -13,7 +17,7 @@ class ACLValves(_base_actuator.Actuator):
     def __init__(self,
                  config: config_types.Config,
                  communication_queue: communication_queue.CommunicationQueue,
-                 pin_factory: gpiozero.pins.pigpio.PiGPIOFactory,
+                 pin_factory: Factory | None = None,
                  max_retries: int = 3,
                  retry_delay: float = 0.5):
 

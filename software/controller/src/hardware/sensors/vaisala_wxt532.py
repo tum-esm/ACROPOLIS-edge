@@ -1,14 +1,14 @@
+from __future__ import annotations
 import random
 import time
 import re
-from typing import Any, Optional, Tuple, List, Match
+from typing import Any, Optional, Tuple, List, Match, TYPE_CHECKING
+import gpiozero
+import serial
 
-try:
-    import gpiozero
-    import gpiozero.pins.pigpio
-    import serial
-except Exception:
-    pass
+
+if TYPE_CHECKING:
+    from gpiozero.pins import Factory
 
 from hardware.sensors._base_sensor import Sensor
 from custom_types import config_types, sensor_types
@@ -51,7 +51,7 @@ class VaisalaWXT532(Sensor):
 
     def __init__(self, config: config_types.Config,
                  communication_queue: communication_queue.CommunicationQueue,
-                 pin_factory: gpiozero.pins.pigpio.PiGPIOFactory) -> None:
+                 pin_factory: Factory,) -> None:
         super().__init__(config=config,
                          communication_queue=communication_queue,
                          pin_factory=pin_factory)

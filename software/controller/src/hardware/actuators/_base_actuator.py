@@ -1,10 +1,11 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 import time
-from typing import Any, Optional
-try:
-    import gpiozero.pins.pigpio
-except Exception:
-    pass
+from typing import Any, Optional, TYPE_CHECKING
+import gpiozero
+
+if TYPE_CHECKING:
+    from gpiozero.pins import Factory
 
 from custom_types import config_types
 from interfaces import logging_interface, communication_queue
@@ -22,7 +23,7 @@ class Actuator(ABC):
             communication_queue: communication_queue.CommunicationQueue,
             max_retries: int = 3,
             retry_delay: float = 0.5,
-            pin_factory: Optional[gpiozero.pins.pigpio.PiGPIOFactory] = None):
+            pin_factory: Factory | None = None,) -> None:
 
         # init parameters
         self.config = config

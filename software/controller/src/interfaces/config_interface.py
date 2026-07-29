@@ -23,4 +23,4 @@ class ConfigInterface:
             raise ConfigInterface.FileIsInvalid(
                 "file not in a valid json format")
         except Exception as e:
-            raise ConfigInterface.FileIsInvalid(e.args[0])
+            raise ConfigInterface.FileIsInvalid(e.args)
