@@ -349,8 +349,6 @@ Insert fresh SD Card into personal computer
 ### **Flash Image to SD Card**
 
 
-/Users/patrickaigner/Documents/AREAS/ACROPOLIS/SD-Backup/old
-
 ```bash
 diskutil list
 diskutil umountDisk /dev/disk[*]
