@@ -1,13 +1,17 @@
+import time
 from typing import Optional, Any
 try:
     import psutil
 except Exception:
     pass
 
-from custom_types import config_types
+from custom_types import config_types, sensor_types
 from custom_types import mqtt_playload_types
 from interfaces import hardware_interface, logging_interface, communication_queue
 from utils import system_info
+
+MODEM_INFO_INTERVAL_SECONDS = 3600
+
 
 class DiskUsageError(Exception):
     """Custom exception for disk usage errors."""
@@ -28,6 +32,7 @@ class SystemCheckProcedure:
         self.hardware_interface = hardware_interface
         self.communication_queue = communication_queue
         self.simulate = config.active_components.simulation_mode
+        self.last_modem_info_time: Optional[float] = None
 
     def run(self) -> None:
         """runs system check procedure
@@ -38,6 +43,7 @@ class SystemCheckProcedure:
         - log CPU/disk/memory usage
         - check whether CPU/disk/memory usage is above 80%
         - check hardware interfaces for errors
+        - log modem signal, and modem/SIM info hourly
         """
 
         cpu_temperature = self.cpu_temperature()
@@ -46,6 +52,7 @@ class SystemCheckProcedure:
         memory_usage = self.memory_usage()
         ups_sate = self.hardware_interface.ups.read()
         mainboard_sensor = self.mainboard_sensor()
+        modem = self.modem()
 
         # construct message and put it into message queue
         self.communication_queue.enqueue_message(
@@ -63,8 +70,26 @@ class SystemCheckProcedure:
                 ups_battery_is_fully_charged,
                 ups_battery_error_detected=ups_sate.ups_battery_error_detected,
                 ups_battery_above_voltage_threshold=ups_sate.
-                ups_battery_above_voltage_threshold),
+                ups_battery_above_voltage_threshold,
+                modem_rssi_dbm=modem.rssi_dbm,
+                modem_rsrp_dbm=modem.rsrp_dbm,
+                modem_rsrq_db=modem.rsrq_db,
+                modem_sinr_db=modem.sinr_db),
         )
+
+        if modem.iccid is not None and (
+                self.last_modem_info_time is None or time.time() -
+                self.last_modem_info_time > MODEM_INFO_INTERVAL_SECONDS):
+            self.communication_queue.enqueue_message(
+                type="measurement",
+                payload=mqtt_playload_types.MQTTModemInfo(
+                    modem_rat=modem.rat,
+                    modem_band=modem.band,
+                    modem_operator=modem.operator,
+                    modem_iccid=modem.iccid,
+                    modem_imei=modem.imei),
+            )
+            self.last_modem_info_time = time.time()
 
         # check for hardware errors
         self.hardware_interface.check_errors()
@@ -120,6 +145,15 @@ class SystemCheckProcedure:
             )
 
         return round(memory_usage_percent / 100, 4)
+
+    def modem(self) -> sensor_types.ModemData:
+        """Read the modem, all values None on failure: it must never stop the controller."""
+        try:
+            modem: sensor_types.ModemData = self.hardware_interface.modem.read()
+            return modem
+        except Exception as e:
+            self.logger.warning(f"Could not read modem: {e}")
+            return sensor_types.ModemData()
 
     def mainboard_sensor(self) -> Any:
 

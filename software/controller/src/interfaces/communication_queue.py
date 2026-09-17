@@ -16,6 +16,7 @@ THINGSBOARD_PAYLOADS = Union[mqtt_playload_types.MQTTCO2Data,
                              mqtt_playload_types.MQTTCO2CalibrationData,
                              mqtt_playload_types.MQTTCalibrationCorrectionData,
                              mqtt_playload_types.MQTTSystemData,
+                             mqtt_playload_types.MQTTModemInfo,
                              mqtt_playload_types.MQTTWindData,
                              mqtt_playload_types.MQTTWindSensorInfo,
                              mqtt_playload_types.MQTTLogMessage]
