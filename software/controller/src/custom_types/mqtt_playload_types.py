@@ -59,6 +59,19 @@ class MQTTSystemData():
     ups_battery_is_fully_charged: bool | float
     ups_battery_error_detected: bool | float
     ups_battery_above_voltage_threshold: bool | float
+    modem_rssi_dbm: Optional[float]
+    modem_rsrp_dbm: Optional[float]
+    modem_rsrq_db: Optional[float]
+    modem_sinr_db: Optional[float]
+
+
+@dataclasses.dataclass
+class MQTTModemInfo():
+    modem_rat: Optional[str]
+    modem_band: Optional[str]
+    modem_operator: Optional[str]
+    modem_iccid: Optional[str]
+    modem_imei: Optional[str]
 
 
 @dataclasses.dataclass

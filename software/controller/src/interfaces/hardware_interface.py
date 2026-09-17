@@ -11,6 +11,7 @@ from hardware.sensors.bosch_bme280 import BoschBME280
 from hardware.sensors.phoenic_contact_UPS import PhoenixContactUPS
 from hardware.sensors.sensirion_sht45 import SensirionSHT45
 from hardware.sensors.grove_MCP9808 import GroveMCP9808
+from hardware.sensors.simcom_sim7600 import SimcomSIM7600
 
 from hardware.actuators.ACL_201 import ACLValves
 from hardware.actuators.SP_622_EC_BL import SchwarzerPrecisionPump
@@ -91,6 +92,8 @@ class HardwareInterface:
             variant="ioboard")
         self.air_inlet_sht45_sensor = SensirionSHT45(
             config=self.config, communication_queue=self.communication_queue)
+        self.modem = SimcomSIM7600(
+            config=self.config, communication_queue=self.communication_queue)
 
         if self.config.active_components.run_sensor_heating_control:
             self.heat_box_sensor = GroveMCP9808(
@@ -164,6 +167,7 @@ class HardwareInterface:
         self.air_inlet_bme280_sensor.teardown()
         self.mainboard_sensor.teardown()
         self.air_inlet_sht45_sensor.teardown()
+        self.modem.teardown()
 
         # measurement actors
         self.pump.teardown()
@@ -188,6 +192,7 @@ class HardwareInterface:
         self.air_inlet_bme280_sensor.reset_sensor()
         self.mainboard_sensor.reset_sensor()
         self.air_inlet_sht45_sensor.reset_sensor()
+        self.modem.reset_sensor()
 
         # measurement actors
         self.pump.reset_actuator()

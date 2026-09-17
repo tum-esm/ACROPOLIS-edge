@@ -39,7 +39,8 @@ Defines structured **MQTT message formats** for data transmission.
 - `MQTTCO2Data` → Sends **CO₂ sensor readings** (raw, compensated, filtered).
 - `MQTTCO2CalibrationData` → Transmits **CO₂ calibration data**.
 - `MQTTCalibrationCorrectionData` → Stores calibration correction values.
-- `MQTTSystemData` → Reports **system health metrics** (CPU, disk, UPS).
+- `MQTTSystemData` → Reports **system health metrics** (CPU, disk, UPS, modem signal).
+- `MQTTModemInfo` → Reports **modem and SIM identification** (ICCID, IMEI, operator, radio technology), hourly.
 - `MQTTWindData` → Contains **wind speed and direction** information.
 - `MQTTWindSensorInfo` → Stores metadata about the **wind sensor’s status**.
 

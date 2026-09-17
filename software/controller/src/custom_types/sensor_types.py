@@ -33,6 +33,21 @@ class SHT45SensorData():
 
 
 @dataclasses.dataclass
+class ModemData():
+    """units: dBm for rssi and rsrp, dB for rsrq and sinr"""
+
+    rssi_dbm: Optional[float] = None
+    rsrp_dbm: Optional[float] = None
+    rsrq_db: Optional[float] = None
+    sinr_db: Optional[float] = None
+    rat: Optional[str] = None
+    band: Optional[str] = None
+    operator: Optional[str] = None
+    iccid: Optional[str] = None
+    imei: Optional[str] = None
+
+
+@dataclasses.dataclass
 class UPSSensorData():
     ups_powered_by_grid: bool | float
     ups_battery_is_fully_charged: bool | float
