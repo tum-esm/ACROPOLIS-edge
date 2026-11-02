@@ -141,7 +141,7 @@ sudo chmod a+x /home/pi/acropolis/run_dockerized_gateway.sh
 
 ### **Install DHCP Script for the Modem**
 
-`simcom-cm` uses this script to assign the IP address to `wwan0`. Without it, the modem connects but the Pi gets no IP address over LTE.
+`simcom-cm` uses this script to assign the IP address to `wwan0` every time it reconnects. Without it, `wwan0` keeps no IP address after a short connection drop until the `udhcpc` from the crontab renews its lease, which can take an hour. The crontab also installs the script at boot if it is missing.
 
 ```bash
 sudo install -D -m 755 modem/default.script /usr/share/udhcpc/default.script
@@ -156,6 +156,8 @@ sudo crontab -e
 Paste content of `crontab.txt` file.
 
 Keep the `>/dev/null 2>&1` after `simcom-cm`. Without it, cron stores the output of `simcom-cm` in a hidden, deleted file in `/tmp` that grows until the next reboot. When the modem hangs, `simcom-cm` logs in a tight loop and can fill the whole disk within an hour.
+
+The `while true` loop restarts `simcom-cm` when it exits, for example after the modem resets and reconnects over USB. Without it, the Pi has no LTE until the next reboot.
 
 
 # Setup Script for Modem Recovery
