@@ -13,7 +13,7 @@ on:
 
 jobs:
   test-codebase:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         # Set working directory to the gateway folder
