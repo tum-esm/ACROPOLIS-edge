@@ -25,6 +25,14 @@ class BME280SensorData():
 
 
 @dataclasses.dataclass
+class BMP585SensorData():
+    """units: °C for temperature, hPa for pressure"""
+
+    temperature: Optional[float]
+    pressure: Optional[float]
+
+
+@dataclasses.dataclass
 class SHT45SensorData():
     """units: °C for temperature, rH for humidity"""
 

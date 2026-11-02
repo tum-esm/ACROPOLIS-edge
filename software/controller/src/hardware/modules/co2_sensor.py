@@ -7,6 +7,7 @@ from utils import ring_buffer, athmospheric_conversion
 from utils.extract_true_bottle_value import extract_true_bottle_value
 from hardware.sensors.vaisala_gmp343 import VaisalaGMP343
 from hardware.sensors.bosch_bme280 import BoschBME280
+from hardware.sensors.bosch_bmp585 import BoschBMP585
 from hardware.sensors.sensirion_sht45 import SensirionSHT45
 from interfaces import state_interface
 
@@ -16,7 +17,8 @@ class CO2MeasurementModule:
 
     def __init__(self, config: config_types.Config,
                  communication_queue: communication_queue.CommunicationQueue,
-                 co2_sensor: VaisalaGMP343, inlet_bme280: BoschBME280,
+                 co2_sensor: VaisalaGMP343,
+                 inlet_pressure_sensor: BoschBME280 | BoschBMP585,
                  inlet_sht45: SensirionSHT45) -> None:
 
         self.logger = logging_interface.Logger(
@@ -36,7 +38,7 @@ class CO2MeasurementModule:
 
         # hardware
         self.co2_sensor = co2_sensor
-        self.inlet_bme280 = inlet_bme280
+        self.inlet_pressure_sensor = inlet_pressure_sensor
         self.inlet_sht45 = inlet_sht45
         
         # test initial sensor readings
@@ -90,10 +92,18 @@ class CO2MeasurementModule:
         fetches the latest temperature and pressure data at air inlet
         """
 
-        self.air_inlet_bme280_data = (self.inlet_bme280.read_with_retry())
+        inlet_pressure_data = self.inlet_pressure_sensor.read_with_retry()
+        if isinstance(inlet_pressure_data, sensor_types.BMP585SensorData):
+            self.air_inlet_bmp585_data = inlet_pressure_data
+            self.air_inlet_bme280_data = sensor_types.BME280SensorData(
+                temperature=None, humidity=None, pressure=None)
+        else:
+            self.air_inlet_bme280_data = inlet_pressure_data
+            self.air_inlet_bmp585_data = sensor_types.BMP585SensorData(
+                temperature=None, pressure=None)
 
         # Add to ring buffer to calculate moving average of low-cost sensor
-        self.rb_pressure.append(self.air_inlet_bme280_data.pressure)
+        self.rb_pressure.append(inlet_pressure_data.pressure)
 
         self.air_inlet_sht45_data = (self.inlet_sht45.read_with_retry())
 
@@ -191,6 +201,8 @@ class CO2MeasurementModule:
                 bme280_temperature=self.air_inlet_bme280_data.temperature,
                 bme280_humidity=self.air_inlet_bme280_data.humidity,
                 bme280_pressure=self.air_inlet_bme280_data.pressure,
+                bmp585_temperature=self.air_inlet_bmp585_data.temperature,
+                bmp585_pressure=self.air_inlet_bmp585_data.pressure,
                 sht45_temperature=self.air_inlet_sht45_data.temperature,
                 sht45_humidity=self.air_inlet_sht45_data.humidity,
             ), )
@@ -210,6 +222,8 @@ class CO2MeasurementModule:
                 cal_bme280_temperature=self.air_inlet_bme280_data.temperature,
                 cal_bme280_humidity=self.air_inlet_bme280_data.humidity,
                 cal_bme280_pressure=self.air_inlet_bme280_data.pressure,
+                cal_bmp585_temperature=self.air_inlet_bmp585_data.temperature,
+                cal_bmp585_pressure=self.air_inlet_bmp585_data.pressure,
                 cal_sht45_temperature=self.air_inlet_sht45_data.temperature,
                 cal_sht45_humidity=self.air_inlet_sht45_data.humidity,
                 cal_gmp343_temperature=CO2_sensor_data.temperature,

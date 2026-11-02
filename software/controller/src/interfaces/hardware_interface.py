@@ -8,6 +8,7 @@ from custom_types import config_types
 from hardware.sensors.vaisala_gmp343 import VaisalaGMP343
 from hardware.sensors.vaisala_wxt532 import VaisalaWXT532
 from hardware.sensors.bosch_bme280 import BoschBME280
+from hardware.sensors.bosch_bmp585 import BoschBMP585, is_bmp585_connected
 from hardware.sensors.phoenic_contact_UPS import PhoenixContactUPS
 from hardware.sensors.sensirion_sht45 import SensirionSHT45
 from hardware.sensors.grove_MCP9808 import GroveMCP9808
@@ -82,10 +83,7 @@ class HardwareInterface:
             config=self.config,
             communication_queue=self.communication_queue,
             pin_factory=self.pin_factory)
-        self.air_inlet_bme280_sensor = BoschBME280(
-            config=self.config,
-            communication_queue=self.communication_queue,
-            variant="air-inlet")
+        self.air_inlet_pressure_sensor = self._create_air_inlet_pressure_sensor()
         self.mainboard_sensor = BoschBME280(
             config=self.config,
             communication_queue=self.communication_queue,
@@ -124,7 +122,7 @@ class HardwareInterface:
             config=config,
             communication_queue=self.communication_queue,
             co2_sensor=self.co2_sensor,
-            inlet_bme280=self.air_inlet_bme280_sensor,
+            inlet_pressure_sensor=self.air_inlet_pressure_sensor,
             inlet_sht45=self.air_inlet_sht45_sensor)
         self.wind_sensor_module = wind_sensor.WindSensorModule(
             config=config,
@@ -140,6 +138,21 @@ class HardwareInterface:
                 heater=self.heat_box_heater,
                 ventilator=self.heat_box_ventilator)
             self.heating_box_module.start()
+
+    def _create_air_inlet_pressure_sensor(self) -> BoschBME280 | BoschBMP585:
+        """newer inlet probes carry a BMP585, older ones a BME280"""
+        if (not self.config.active_components.simulation_mode
+                and is_bmp585_connected()):
+            self.logger.info("Using air-inlet pressure sensor: BMP585",
+                             forward=True)
+            return BoschBMP585(config=self.config,
+                               communication_queue=self.communication_queue)
+
+        self.logger.info("Using air-inlet pressure sensor: BME280",
+                         forward=True)
+        return BoschBME280(config=self.config,
+                           communication_queue=self.communication_queue,
+                           variant="air-inlet")
 
     def check_errors(self) -> None:
         """checks for detectable hardware errors"""
@@ -164,7 +177,7 @@ class HardwareInterface:
         self.co2_sensor.teardown()
         self.wind_sensor.teardown()
         self.ups.teardown()
-        self.air_inlet_bme280_sensor.teardown()
+        self.air_inlet_pressure_sensor.teardown()
         self.mainboard_sensor.teardown()
         self.air_inlet_sht45_sensor.teardown()
         self.modem.teardown()
@@ -189,7 +202,7 @@ class HardwareInterface:
         self.co2_sensor.reset_sensor()
         self.wind_sensor.reset_sensor()
         self.ups.reset_sensor()
-        self.air_inlet_bme280_sensor.reset_sensor()
+        self.air_inlet_pressure_sensor.reset_sensor()
         self.mainboard_sensor.reset_sensor()
         self.air_inlet_sht45_sensor.reset_sensor()
         self.modem.reset_sensor()

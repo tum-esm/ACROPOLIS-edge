@@ -21,6 +21,8 @@ class MQTTCO2Data():
     bme280_temperature: Optional[float]
     bme280_humidity: Optional[float]
     bme280_pressure: Optional[float]
+    bmp585_temperature: Optional[float]
+    bmp585_pressure: Optional[float]
     sht45_temperature: Optional[float]
     sht45_humidity: Optional[float]
 
@@ -35,6 +37,8 @@ class MQTTCO2CalibrationData():
     cal_bme280_temperature: Optional[float]
     cal_bme280_humidity: Optional[float]
     cal_bme280_pressure: Optional[float]
+    cal_bmp585_temperature: Optional[float]
+    cal_bmp585_pressure: Optional[float]
     cal_sht45_temperature: Optional[float]
     cal_sht45_humidity: Optional[float]
 

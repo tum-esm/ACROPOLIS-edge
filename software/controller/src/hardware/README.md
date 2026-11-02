@@ -40,6 +40,7 @@ The `actuators` subfolder contains hardware interfaces for:
 The `sensors` subfolder includes hardware interfaces for various environmental and system sensors:
 
 - **Bosch BME280** – Humidity, temperature, and pressure
+- **Bosch BMP585** – Temperature and pressure
 - **Grove MCP9808** – Temperature
 - **Phoenix Contact UPS** – Uninterruptible power supply monitoring
 - **Sensirion SHT45** – Humidity and temperature
@@ -54,7 +55,7 @@ The `modules` subfolder contains higher-level modules that integrate multiple se
 
 - Interfaces with Vaisala GMP343 (CO₂ sensor)
 - Integrates Sensirion SHT45 for humidity correction
-- Utilizes Bosch BME280 for pressure correction
+- Utilizes the air-inlet pressure sensor for pressure correction: Bosch BMP585 on newer probes, Bosch BME280 on older ones (detected at startup)
 - Handles CO₂ measurement, calibration, dilution correction
 - Queues processed data for MQTT transmission
 
