@@ -139,6 +139,14 @@ sudo cp run_dockerized_gateway.sh /home/pi/acropolis/
 sudo chmod a+x /home/pi/acropolis/run_dockerized_gateway.sh
 ```
 
+### **Install DHCP Script for the Modem**
+
+`simcom-cm` uses this script to assign the IP address to `wwan0`. Without it, the modem connects but the Pi gets no IP address over LTE.
+
+```bash
+sudo install -D -m 755 modem/default.script /usr/share/udhcpc/default.script
+```
+
 ### **Update Crontab for Automation**
 
 ```bash
@@ -146,6 +154,8 @@ sudo crontab -e
 ```
 
 Paste content of `crontab.txt` file.
+
+Keep the `>/dev/null 2>&1` after `simcom-cm`. Without it, cron stores the output of `simcom-cm` in a hidden, deleted file in `/tmp` that grows until the next reboot. When the modem hangs, `simcom-cm` logs in a tight loop and can fill the whole disk within an hour.
 
 
 # Setup Script for Modem Recovery
@@ -198,6 +208,22 @@ sudo bash build_gateway_runner_docker_image.sh
 cd /home/pi/acropolis
 sudo nano run_dockerized_gateway.sh # Update `THINGSBOARD_PROVISION_*` environment parameters (Thingsboard -> Device Profile -> Name -> Device Provisioning)
 ```
+
+## 7. (Recommended) Install Tailscale
+
+Tailscale gives SSH access to the Pi over LTE, without being on site. This helps to debug problems that the ThingsBoard logs do not show, for example a full disk or a hanging modem.
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+```
+
+Do not log in yet if you create an image for multiple systems (step 9). Every system that is flashed from a logged-in image would share the same Tailscale identity. Log in on each system after flashing instead:
+
+```bash
+sudo tailscale up
+```
+
+Open the printed link and log in with the team account. Then disable key expiry for the device in the Tailscale admin console, otherwise the device drops out after about 180 days and needs a new login on site.
 
 ## (Optional) 8. Provision and Setup Gateway for Thingsboard
 
@@ -374,6 +400,14 @@ cd /home/pi/acropolis
 ./run_dockerized_gateway.sh
 docker logs --tail 50 -f acropolis_edge_gateway
 ```
+
+### **Log in to Tailscale**
+
+```bash
+sudo tailscale up
+```
+
+See step 7.
 
 ---
 
