@@ -9,9 +9,11 @@ This guide provides step-by-step instructions to set up a Raspberry Pi 4 as an e
     📁 modem
         📄 default.script
         📄 network_lost_reboot_trigger.sh
+    📄 cleanup_template.sh
     📄 config.txt
     📄 crontab.txt
     📄 run_dockerized_gateway.sh
+    📄 shrink_image.sh
     📄 pigpiod.service
     📄 README.md
     
@@ -357,71 +359,57 @@ docker logs --tail 50 -f acropolis_edge_gateway
 (3) Assign software version "1.0.1" in the device details page in Thingsboard.
 
 
-## 9. Create & Flash SD Card Image
+## 9. Create SD Card Image
 
 ### **Clean Up the Template System**
 
-The image must not contain anything that belongs to one system. If the gateway ever ran on the template system (step 8), remove its containers, ThingsBoard token, data and logs. Otherwise Docker starts the old gateway container on every flashed system at boot, and all systems share one ThingsBoard device. The same applies to the Tailscale state.
+The image must not contain anything that belongs to one system. `cleanup_template.sh` removes the gateway containers, the ThingsBoard token, data (except `config.json`), logs and the Tailscale state. Otherwise Docker starts the old gateway container on every flashed system at boot, and all systems share one ThingsBoard device.
+
+The script keeps the Docker images, including the untagged `<none>` image. They are the build cache for controller updates. Without them, every system downloads the Python base images and all packages again over LTE.
 
 ```bash
-sudo docker rm -f acropolis_edge_gateway acropolis_edge_controller
-sudo rm -f /home/pi/acropolis/acropolis-edge/software/gateway/tb_access_token
-sudo find /home/pi/acropolis/data -mindepth 1 ! -name config.json -delete
-sudo find /home/pi/acropolis/logs -mindepth 1 -delete
-sudo systemctl stop tailscaled && sudo rm -rf /var/lib/tailscale
+sudo /home/pi/acropolis/acropolis-edge/setup/RPi-edge-client/cleanup_template.sh
 sudo poweroff
 ```
 
-Keep the Docker images, including the untagged `<none>` image. They are the build cache for controller updates. Without them, every system downloads the Python base images and all packages again over LTE.
-
 ### **Create Image**
 
-Remove SD Card and insert into personal computer. `/dev/rdisk[*]` is the raw device and much faster than `/dev/disk[*]`. Press `Ctrl+T` to show the progress.
+Remove SD Card and insert into personal computer.
+
+Linux (find the SD card with `lsblk`, e.g. `/dev/sdX` or `/dev/mmcblk0`):
 
 ```bash
-diskutil list
-diskutil unmountDisk /dev/disk[*]
-sudo dd if=/dev/rdisk[*] of=$HOME/acropolis-edge-image.img bs=4m
-diskutil eject /dev/disk[*]
+sudo umount /dev/sdX?*
+sudo dd if=/dev/sdX of=acropolis-edge-image.img bs=4M status=progress
+```
+
+macOS (find the SD card with `diskutil list`). `/dev/rdiskN` is the raw device and much faster than `/dev/diskN`. Press `Ctrl+T` to show the progress.
+
+```bash
+diskutil unmountDisk /dev/diskN
+sudo dd if=/dev/rdiskN of=$HOME/acropolis-edge-image.img bs=4m
+diskutil eject /dev/diskN
 ```
 
 ### **Shrink Image**
 
-The raw image has the size of the whole SD card, so flashing writes every byte, including the empty space. Shrinking cuts the image to the used space (about 7 GB instead of 32 GB). It also re-enables the Raspberry Pi OS first boot step. On the first boot of each flashed system, it grows the root partition to the full SD card, creates new SSH host keys and a new disk ID, and reboots once.
+The raw image has the size of the whole SD card, so flashing it writes every byte, including the empty space. `shrink_image.sh` cuts the image to the used space (about 7 GB instead of 32 GB) and compresses it to `acropolis-edge-image.gz`. It also re-enables the Raspberry Pi OS first boot step. On the first boot of each flashed system, this step grows the root partition to the full SD card, creates new SSH host keys and a new disk ID, and reboots once.
 
-macOS cannot resize ext4, so this runs in the Linux VM of [Colima](https://github.com/abiosoft/colima) (`brew install colima docker`). Colima mounts `$HOME` at the same path.
+Linux (needs `e2fsprogs` and `util-linux`), from the repository root:
+
+```bash
+sudo setup/RPi-edge-client/shrink_image.sh acropolis-edge-image.img
+```
+
+macOS cannot resize ext4. Run the script in the Linux VM of [Colima](https://github.com/abiosoft/colima) (`brew install colima`). Colima mounts `$HOME` at the same path, so the image and the repository must be inside `$HOME`. From the repository root:
 
 ```bash
 colima start
-colima ssh
+colima ssh -- sudo $PWD/setup/RPi-edge-client/shrink_image.sh $HOME/acropolis-edge-image.img
+colima stop
 ```
 
-In the VM:
-
-```bash
-IMG=/Users/<user>/acropolis-edge-image.img
-LOOP=$(sudo losetup -fP --show $IMG)
-
-sudo mount ${LOOP}p1 /mnt
-grep -q firstboot /mnt/cmdline.txt || sudo sed -i '1s|$| init=/usr/lib/raspberrypi-sys-mods/firstboot|' /mnt/cmdline.txt
-sudo umount /mnt
-
-sudo e2fsck -fy ${LOOP}p2
-sudo resize2fs -M ${LOOP}p2
-BLOCKS=$(sudo dumpe2fs -h ${LOOP}p2 2>/dev/null | awk '/^Block count/{print $3}')
-BLOCK_SIZE=$(sudo dumpe2fs -h ${LOOP}p2 2>/dev/null | awk '/^Block size/{print $3}')
-sudo losetup -d $LOOP
-
-START=$(partx -g -o START -n 2 $IMG)
-SECTORS=$((BLOCKS * BLOCK_SIZE / 512))
-echo "$START,$SECTORS" | sudo sfdisk --no-reread -N 2 $IMG
-sudo truncate -s $(( (START + SECTORS) * 512 )) $IMG
-
-pigz -c $IMG > ${IMG%.img}.gz
-exit
-```
-
-Then delete the raw `.img` file and stop the VM with `colima stop`.
+Then delete `acropolis-edge-image.img`.
 
 
 ## 10. Fast Setup for additional systems
@@ -430,18 +418,24 @@ Insert fresh SD Card into personal computer
 
 ### **Flash Image to SD Card**
 
-Write to the raw device `/dev/rdisk[*]`, it is much faster. macOS `dd` needs a lowercase `bs=4m` and does not support `status=progress`. Press `Ctrl+T` to show the progress. Eject right after flashing, otherwise macOS mounts `bootfs` and writes its own files to it.
+Linux (find the SD card with `lsblk`):
 
 ```bash
-diskutil list
-diskutil unmountDisk /dev/disk[*]
-gzip -dc //Users/.../acropolis-edge-image.gz | sudo dd of=/dev/rdisk[*] bs=4m
-diskutil eject /dev/disk[*]
+sudo umount /dev/sdX?*
+gzip -dc acropolis-edge-image.gz | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
+```
+
+macOS (find the SD card with `diskutil list`). Write to the raw device `/dev/rdiskN`, it is much faster. macOS `dd` needs a lowercase `bs=4m` and does not support `status=progress`. Press `Ctrl+T` to show the progress. Eject right after flashing, otherwise macOS mounts `bootfs` and writes its own files to it.
+
+```bash
+diskutil unmountDisk /dev/diskN
+gzip -dc acropolis-edge-image.gz | sudo dd of=/dev/rdiskN bs=4m
+diskutil eject /dev/diskN
 ```
 
 Remove SD Card and insert into RaspberryPi
 
-The first boot grows the root partition to the full SD card, creates new SSH host keys and reboots once by itself. This takes 1–2 minutes.
+The first boot grows the root partition to the full SD card, creates new SSH host keys and reboots once by itself.
 
 Every system has its own SSH host keys but the same hostname until you change it. If `ssh` warns that the host key changed, remove the old key first:
 
