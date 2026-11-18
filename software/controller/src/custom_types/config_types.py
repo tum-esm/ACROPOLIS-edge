@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Literal
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -103,11 +103,10 @@ class HardwareConfig(BaseModel):
 class RainModeConfig(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
+    enabled: bool = True
     stop_above_percent: float = Field(50, ge=0, le=100)
-    stop_after_seconds: int = Field(600, ge=0)
-    resume_below_percent: float = Field(40, ge=0, le=100)
-    resume_after_seconds: int = Field(1800, ge=0)
-    max_pause_seconds: int = Field(21600, ge=60)
+    pause_seconds: int = Field(3600, ge=60)
+    test_pump_seconds: int = Field(60, ge=1, le=600)
 
 
 class MeasurementConfig(BaseModel):
@@ -133,4 +132,4 @@ class Config(BaseModel):
     documentation: DocumentationConfig
     hardware: HardwareConfig
     measurement: MeasurementConfig
-    rain_mode: Optional[RainModeConfig] = None  # None: rain mode off
+    rain_mode: RainModeConfig = Field(default_factory=RainModeConfig)  # on with defaults when missing

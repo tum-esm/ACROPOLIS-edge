@@ -154,6 +154,7 @@ while True:
         # RAIN MODE: pause pumping while water may be pulled into the inlet
 
         if rain_mode_procedure.enabled:
+            alarms.set_alarm(config.rain_mode.test_pump_seconds + 120, "rain mode")
             rain_mode_procedure.run()
             if rain_mode_procedure.paused:
                 logger.info("Rain mode: pump paused, calibration and measurement skipped.")

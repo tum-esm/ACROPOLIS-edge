@@ -79,5 +79,11 @@
         "average_air_inlet_measurements": 15,
         "procedure_seconds": 120,
         "valve_number": 1
+    },
+    "rain_mode": {
+        "enabled": true,
+        "stop_above_percent": 50,
+        "pause_seconds": 3600,
+        "test_pump_seconds": 60
     }
 }

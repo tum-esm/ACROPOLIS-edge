@@ -1,82 +1,110 @@
+import statistics
 import time
 from typing import Optional
 
-from custom_types import config_types
+from custom_types import config_types, mqtt_playload_types
 from interfaces import hardware_interface, logging_interface, communication_queue
 
 RECHECK_SECONDS = 60
+TEST_RUN_SAMPLE_SECONDS = 10
 
 
 class RainMode:
-    """Decides from the air-inlet humidity whether pumping pauses.
+    """Pause state of the pump while the air inlet is wet.
 
-    Pauses after the humidity stays above `stop_above_percent` for
-    `stop_after_seconds`. Resumes after it stays below `resume_below_percent`
-    for `resume_after_seconds`, or after `max_pause_seconds` at the latest."""
+    Wet (humidity above `stop_above_percent`): pause for `pause_seconds`.
+    Then a test run pumps for `test_pump_seconds` and checks again:
+    still wet pauses again, dry resumes."""
 
     def __init__(self, config: config_types.RainModeConfig) -> None:
         self.config = config
-        self.paused = False
-        self.paused_since: Optional[float] = None
-        self.wet_since: Optional[float] = None
-        self.dry_since: Optional[float] = None
+        self.paused_until: Optional[float] = None
 
-    def update(self, humidity: float, now: float) -> bool:
-        """Returns True while pumping should pause. `now` is in seconds."""
-        if not self.paused:
-            self.wet_since = (now if self.wet_since is None else self.wet_since) if humidity > self.config.stop_above_percent else None
-            if self.wet_since is not None and now - self.wet_since >= self.config.stop_after_seconds:
-                self.paused, self.paused_since, self.dry_since = True, now, None
-            return self.paused
+    @property
+    def paused(self) -> bool:
+        return self.paused_until is not None
 
-        self.dry_since = (now if self.dry_since is None else self.dry_since) if humidity < self.config.resume_below_percent else None
-        dried = self.dry_since is not None and now - self.dry_since >= self.config.resume_after_seconds
-        assert self.paused_since is not None  # set whenever paused
-        timed_out = now - self.paused_since >= self.config.max_pause_seconds
-        if dried or timed_out:
-            self.paused, self.paused_since, self.wet_since = False, None, None
-        return self.paused
+    def is_wet(self, humidity: float) -> bool:
+        return humidity > self.config.stop_above_percent
+
+    def test_run_due(self, now: float) -> bool:
+        return self.paused_until is not None and now >= self.paused_until
+
+    def check(self, humidity: float, now: float) -> None:
+        self.paused_until = now + self.config.pause_seconds if self.is_wet(humidity) else None
 
 
 class RainModeProcedure:
     """runs every mainloop call before calibration and measurement
 
-    Stops the pump while the air inlet is wet, restarts it once dry.
-    Off when the config has no `rain_mode` block."""
+    On by default; off with `rain_mode.enabled = false`."""
 
     def __init__(
             self, config: config_types.Config,
             communication_queue: communication_queue.CommunicationQueue,
             hardware_interface: hardware_interface.HardwareInterface) -> None:
+
         self.logger, self.config = logging_interface.Logger(
             config=config,
             communication_queue=communication_queue,
             origin="rain-mode-procedure"), config
         self.hardware_interface = hardware_interface
-        self.rain_mode = RainMode(config.rain_mode) if config.rain_mode else None
+        self.communication_queue = communication_queue
+        self.rain_mode = RainMode(config.rain_mode)
 
     @property
     def enabled(self) -> bool:
-        return self.rain_mode is not None
+        return self.config.rain_mode.enabled
 
     @property
     def paused(self) -> bool:
-        return self.rain_mode is not None and self.rain_mode.paused
+        return self.rain_mode.paused
 
     def run(self) -> None:
-        """Updates the pause state from the air-inlet humidity, switches the pump."""
-        assert self.rain_mode is not None, "rain mode is not enabled"
-
-        humidity = self.hardware_interface.air_inlet_sht45_sensor.read().humidity
-        was_paused = self.rain_mode.paused
-        paused = self.rain_mode.update(humidity, time.time())
-
-        if paused and not was_paused:
-            self.logger.warning(f"Rain mode on: air-inlet humidity {humidity:.1f} %, pump stopped.", forward=True)
-            self.hardware_interface.pump.set(pwm_duty_cycle=0)
-        elif was_paused and not paused:
-            self.logger.info(f"Rain mode off: air-inlet humidity {humidity:.1f} %, pump restarted.", forward=True)
-            self.hardware_interface.pump.set(pwm_duty_cycle=self.config.hardware.pump_pwm_duty_cycle)
-
-        if paused:
+        """Pauses the pump while the inlet is wet; test run after each pause."""
+        if self.rain_mode.paused and not self.rain_mode.test_run_due(time.time()):
+            self._send_state()
             time.sleep(RECHECK_SECONDS)
+            return
+
+        was_paused = self.rain_mode.paused
+        humidity = self._test_run() if was_paused else self._recent_humidity()
+        self.rain_mode.check(humidity, time.time())
+
+        if self.rain_mode.paused:
+            self.logger.warning(
+                f"Rain mode on: air-inlet humidity {humidity:.1f} %, pump off for {self.config.rain_mode.pause_seconds} s.",
+                forward=True)
+            self._set_pump(on=False)
+        elif was_paused:
+            self.logger.info(f"Rain mode off: air-inlet humidity {humidity:.1f} %, measuring again.", forward=True)
+            # drop the wet readings from before the pause, otherwise the next check pauses again
+            self.hardware_interface.co2_measurement_module.rb_humidity.clear()
+        self._send_state()
+
+    def _recent_humidity(self) -> float:
+        """Median of the inlet humidity over the last measurement interval (about 2.5 min)."""
+        median = self.hardware_interface.co2_measurement_module.rb_humidity.median()
+        if median is None:
+            return float(self.hardware_interface.air_inlet_sht45_sensor.read().humidity)
+        return float(median)
+
+    def _test_run(self) -> float:
+        """Pumps for `test_pump_seconds`; median humidity of the second half (fresh air)."""
+        self.logger.info(f"Rain mode: test run, pumping {self.config.rain_mode.test_pump_seconds} s.")
+        self._set_pump(on=True)
+        readings = []
+        start = time.time()
+        while time.time() - start < self.config.rain_mode.test_pump_seconds:
+            time.sleep(TEST_RUN_SAMPLE_SECONDS)
+            readings.append(self.hardware_interface.air_inlet_sht45_sensor.read().humidity)
+        return float(statistics.median(readings[len(readings) // 2:]))
+
+    def _set_pump(self, on: bool) -> None:
+        duty_cycle = self.config.hardware.pump_pwm_duty_cycle if on else 0
+        self.hardware_interface.pump.set(pwm_duty_cycle=duty_cycle)
+
+    def _send_state(self) -> None:
+        self.communication_queue.enqueue_message(
+            type="measurement",
+            payload=mqtt_playload_types.MQTTRainModeData(rain_mode_paused=int(self.rain_mode.paused)))
