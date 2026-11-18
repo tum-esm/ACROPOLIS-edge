@@ -11,7 +11,7 @@ import pytz
 sys.path.insert(0, str(Path(__file__).parent))
 
 from interfaces import config_interface, logging_interface, state_interface, hardware_interface, communication_queue
-from procedures import calibration, measurement, rain_mode, system_check
+from procedures import calibration, measurement, system_check
 from custom_types import mqtt_playload_types
 from utils import alarms, expontential_backoff
 
@@ -128,8 +128,6 @@ try:
         config=config, communication_queue=queue, hardware_interface=hardware)
     measurement_procedure = measurement.MeasurementProcedure(
         config=config, communication_queue=queue, hardware_interface=hardware)
-    rain_mode_procedure = rain_mode.RainModeProcedure(
-        config=config, communication_queue=queue, hardware_interface=hardware)
 except Exception as e:
     logger.exception(e, label="Could not initialize procedures", forward=True)
     raise e
@@ -149,12 +147,6 @@ while True:
 
         logger.info("Running system checks.")
         system_check_procedure.run()
-
-        # -----------------------------------------------------------------
-        # RAIN MODE: pause pumping while water may be pulled into the inlet
-
-        if rain_mode_procedure.run():
-            continue
 
         # -----------------------------------------------------------------
         # CALIBRATION
