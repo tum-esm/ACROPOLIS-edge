@@ -63,6 +63,10 @@ class SqliteConnection:
             except Exception as e:
                 if "no such table" in str(e):
                     return [()]
+                if "database is locked" in str(e):
+                    # The controller shares this file: deleting it loses its health check and messages
+                    print(f"[SQLITE]: '{self.path}' is locked, query skipped: {e}")
+                    return None
                 self.reset_db_conn(e)
                 return self.execute(query)
             return fetch
