@@ -128,14 +128,14 @@ try:
         config=config, communication_queue=queue, hardware_interface=hardware)
     measurement_procedure = measurement.MeasurementProcedure(
         config=config, communication_queue=queue, hardware_interface=hardware)
+    rain_mode_procedure = rain_mode.RainModeProcedure(
+        config=config, communication_queue=queue, hardware_interface=hardware)
 except Exception as e:
     logger.exception(e, label="Could not initialize procedures", forward=True)
     raise e
 
 # -------------------------------------------------------------------------
 # infinite mainloop
-
-rain_mode_procedure = rain_mode.RainMode(config.rain_mode) if config.rain_mode else None
 
 logger.info("Successfully finished setup. Starting main loop.", forward=True)
 
@@ -153,18 +153,8 @@ while True:
         # -----------------------------------------------------------------
         # RAIN MODE: pause pumping while water may be pulled into the inlet
 
-        if rain_mode_procedure is not None:
-            inlet_humidity = hardware.air_inlet_sht45_sensor.read().humidity
-            was_paused = rain_mode_procedure.paused
-            if rain_mode_procedure.update(inlet_humidity, time.time()):
-                if not was_paused:
-                    logger.warning(f"Rain mode on: air-inlet humidity {inlet_humidity:.1f} %, pump stopped.", forward=True)
-                    hardware.pump.set(pwm_duty_cycle=0)
-                time.sleep(60)
-                continue
-            if was_paused:
-                logger.info(f"Rain mode off: air-inlet humidity {inlet_humidity:.1f} %, pump restarted.", forward=True)
-                hardware.pump.set(pwm_duty_cycle=config.hardware.pump_pwm_duty_cycle)
+        if rain_mode_procedure.run():
+            continue
 
         # -----------------------------------------------------------------
         # CALIBRATION
