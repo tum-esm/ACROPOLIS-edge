@@ -106,7 +106,7 @@ class RainModeConfig(BaseModel):
     enabled: bool = True
     stop_above_percent: float = Field(50, ge=0, le=100)
     pause_seconds: int = Field(3600, ge=60)
-    test_pump_seconds: int = Field(60, ge=1, le=600)
+    test_pump_seconds: int = Field(180, ge=1, le=600)
 
 
 class MeasurementConfig(BaseModel):
