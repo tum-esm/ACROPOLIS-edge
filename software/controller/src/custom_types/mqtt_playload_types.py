@@ -79,6 +79,11 @@ class MQTTModemInfo():
 
 
 @dataclasses.dataclass
+class MQTTRainModeData():
+    rain_mode_paused: int  # 1 while pumping pauses, 0 otherwise
+
+
+@dataclasses.dataclass
 class MQTTWindData():
     wxt532_direction_min: float
     wxt532_direction_avg: float
