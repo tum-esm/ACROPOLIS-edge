@@ -31,6 +31,7 @@ class RainMode:
 
         self.dry_since = (now if self.dry_since is None else self.dry_since) if humidity < self.config.resume_below_percent else None
         dried = self.dry_since is not None and now - self.dry_since >= self.config.resume_after_seconds
+        assert self.paused_since is not None  # set whenever paused
         timed_out = now - self.paused_since >= self.config.max_pause_seconds
         if dried or timed_out:
             self.paused, self.paused_since, self.wet_since = False, None, None
