@@ -55,10 +55,17 @@ class RainModeProcedure:
         self.hardware_interface = hardware_interface
         self.rain_mode = RainMode(config.rain_mode) if config.rain_mode else None
 
-    def run(self) -> bool:
-        """Returns True while paused: skip calibration and measurement."""
-        if self.rain_mode is None:
-            return False
+    @property
+    def enabled(self) -> bool:
+        return self.rain_mode is not None
+
+    @property
+    def paused(self) -> bool:
+        return self.rain_mode is not None and self.rain_mode.paused
+
+    def run(self) -> None:
+        """Updates the pause state from the air-inlet humidity, switches the pump."""
+        assert self.rain_mode is not None, "rain mode is not enabled"
 
         humidity = self.hardware_interface.air_inlet_sht45_sensor.read().humidity
         was_paused = self.rain_mode.paused
@@ -73,4 +80,3 @@ class RainModeProcedure:
 
         if paused:
             time.sleep(RECHECK_SECONDS)
-        return paused

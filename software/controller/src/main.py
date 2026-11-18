@@ -153,8 +153,13 @@ while True:
         # -----------------------------------------------------------------
         # RAIN MODE: pause pumping while water may be pulled into the inlet
 
-        if rain_mode_procedure.run():
-            continue
+        if rain_mode_procedure.enabled:
+            rain_mode_procedure.run()
+            if rain_mode_procedure.paused:
+                logger.info("Rain mode: pump paused, calibration and measurement skipped.")
+                continue
+        else:
+            logger.info("Rain mode is not activated.")
 
         # -----------------------------------------------------------------
         # CALIBRATION
