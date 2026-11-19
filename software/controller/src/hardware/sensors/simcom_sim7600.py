@@ -18,6 +18,11 @@ SIMCOM_USB_VENDOR_ID = "1e0e"
 SIMCOM_AT_INTERFACE = "02"
 USB_SERIAL_SYSFS_PATH = "/sys/bus/usb-serial/devices"
 AT_COMMAND_TIMEOUT_SECONDS = 2
+# Kite SIMs carry no data over Telekom (national roaming), so the modem must not leave O2.
+# 262-03 is what acropolis-4 reports on O2 (+CPSI)
+O2_GERMANY_PLMN = "26203"
+NETWORK_REGISTRATION_TIMEOUT_SECONDS = 120
+NETWORK_LOCK_RETRY_SECONDS = 3600
 
 
 def find_at_port(sysfs_path: str = USB_SERIAL_SYSFS_PATH) -> Optional[str]:
@@ -81,8 +86,12 @@ def parse_operator(response: str) -> Optional[str]:
     return match.group(1) if match else None
 
 
+def is_automatic_network_selection(response: str) -> bool:
+    return re.search(r"\+COPS: 0\b", response) is not None
+
+
 class SimcomSIM7600(Sensor):
-    """Class for the SIMCom SIM7600 LTE modem, read-only AT queries.
+    """Class for the SIMCom SIM7600 LTE modem, AT queries and the O2 network lock.
 
     The modem is optional: without it, all values are None. The data connection
     runs over QMI (simcom-cm), so the AT port is free."""
@@ -91,6 +100,7 @@ class SimcomSIM7600(Sensor):
                  communication_queue: communication_queue.CommunicationQueue):
         super().__init__(config=config,
                          communication_queue=communication_queue)
+        self.last_network_lock_time: Optional[float] = None
 
     def _initialize_sensor(self) -> None:
         """The port is opened per read, so a missing modem cannot stop the controller."""
@@ -108,6 +118,9 @@ class SimcomSIM7600(Sensor):
         with serial.Serial(port=port,
                            baudrate=115200,
                            timeout=AT_COMMAND_TIMEOUT_SECONDS) as interface:
+            cops = self._send_command(interface, "AT+COPS?")
+            if is_automatic_network_selection(cops):
+                self._lock_network_to_o2(interface)
             cpsi = parse_cpsi(self._send_command(interface, "AT+CPSI?"))
             data = sensor_types.ModemData(
                 rssi_dbm=parse_csq(self._send_command(interface, "AT+CSQ")),
@@ -116,8 +129,7 @@ class SimcomSIM7600(Sensor):
                 sinr_db=cpsi.get("sinr_db"),
                 rat=cpsi.get("rat"),
                 band=cpsi.get("band"),
-                operator=parse_operator(
-                    self._send_command(interface, "AT+COPS?")),
+                operator=parse_operator(cops),
                 iccid=parse_iccid(self._send_command(interface,
                                                      "AT+CICCID")),
                 imei=parse_imei(self._send_command(interface, "AT+CGSN")),
@@ -125,12 +137,31 @@ class SimcomSIM7600(Sensor):
         self.logger.debug(f"Modem: {data}")
         return data
 
-    def _send_command(self, interface: Any, command: str) -> str:
+    def _lock_network_to_o2(self, interface: Any) -> None:
+        if (self.last_network_lock_time is not None and time.time() -
+                self.last_network_lock_time < NETWORK_LOCK_RETRY_SECONDS):
+            return
+        self.last_network_lock_time = time.time()
+        response = self._send_command(
+            interface, f'AT+COPS=1,2,"{O2_GERMANY_PLMN}",7',
+            NETWORK_REGISTRATION_TIMEOUT_SECONDS)
+        # the lock switches +COPS? to numeric, keep reporting the operator name
+        self._send_command(interface, "AT+COPS=3,0")
+        if "OK" in response:
+            self.logger.info(f"Locked modem to O2 ({O2_GERMANY_PLMN}).")
+        else:
+            self.logger.warning(
+                f"Could not lock modem to O2 ({O2_GERMANY_PLMN}): {response.strip()}")
+
+    def _send_command(self,
+                      interface: Any,
+                      command: str,
+                      timeout_seconds: float = AT_COMMAND_TIMEOUT_SECONDS) -> str:
         """Returns the response up to OK or ERROR, raises on timeout."""
         interface.reset_input_buffer()
         interface.write(f"{command}\r".encode())
         response = b""
-        deadline = time.time() + AT_COMMAND_TIMEOUT_SECONDS
+        deadline = time.time() + timeout_seconds
         while time.time() < deadline:
             response += interface.read(interface.in_waiting or 1)
             if b"OK\r\n" in response or b"ERROR" in response:

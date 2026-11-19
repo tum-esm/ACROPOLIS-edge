@@ -1,6 +1,8 @@
 import pytest
 
-from hardware.sensors.simcom_sim7600 import (find_at_port, parse_cpsi, parse_csq,
+from hardware.sensors.simcom_sim7600 import (find_at_port,
+                                             is_automatic_network_selection,
+                                             parse_cpsi, parse_csq,
                                              parse_iccid, parse_imei,
                                              parse_operator)
 
@@ -41,6 +43,14 @@ def test_parse_identifiers() -> None:
     assert parse_operator(COPS) == "o2 - de"
     assert parse_iccid("\r\nERROR\r\n") is None
     assert parse_imei("\r\nERROR\r\n") is None
+
+
+@pytest.mark.github_action
+def test_is_automatic_network_selection() -> None:
+    assert is_automatic_network_selection(COPS)
+    assert not is_automatic_network_selection(
+        '\r\n+COPS: 1,0,"o2 - de",7\r\n\r\nOK\r\n')
+    assert not is_automatic_network_selection("\r\nERROR\r\n")
 
 
 @pytest.mark.github_action
