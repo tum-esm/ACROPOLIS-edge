@@ -89,6 +89,10 @@ class CalibrationProcedure:
         # clear ring buffers
         self.hardware_interface.co2_measurement_module.reset_ring_buffers()
 
+        # the wind sensor is not read during calibration: drop what piled up
+        self.hardware_interface.wind_sensor_module.discard_wind_sensor_backlog(
+        )
+
         self.logger.info(
             f"finished calibration procedure",
             forward=True,

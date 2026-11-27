@@ -109,6 +109,14 @@ class VaisalaWXT532(Sensor):
             wind_measurements)
         return aggregated_measurement, self.latest_device_status
 
+    def discard_backlog(self) -> None:
+        """Drop all messages that have not been read yet."""
+        if self.simulate:
+            return
+        self.serial_interface.flush_receiver_stream()
+        self.current_input_stream = ""
+        self.buffered_messages.clear()
+
     def _simulate_read(
         self
     ) -> Tuple[Optional[sensor_types.WindSensorData],
