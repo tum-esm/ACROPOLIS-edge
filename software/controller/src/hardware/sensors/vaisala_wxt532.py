@@ -22,6 +22,16 @@ MEASUREMENT_PATTERN = (
 DEVICE_STATUS_PATTERN = (
     r"Th=([0-9.]+)C,Vh=([0-9.]+)N,Vs=([0-9.]+)V,Vr=([0-9.]+)V")
 
+# Reading the serial port until it is empty: pause between two reads and the
+# longest time one drain may take.
+DRAIN_PAUSE_SECONDS = 0.05
+DRAIN_TIMEOUT_SECONDS = 5.0
+
+# Messages are averaged over the time since the previous read, normally one
+# measurement cycle. After a longer gap (for example a calibration) the
+# waiting messages are dropped instead of averaged into one value.
+MAX_READ_GAP_SECONDS = 300.0
+
 
 class SerialInterface:
 
@@ -40,10 +50,23 @@ class SerialInterface:
         time.sleep(0.2)
         self.serial_interface.reset_input_buffer()
 
-    def read_all(self) -> Any:
-        """Read all available data from the serial port and decode it."""
-        raw_bytes = self.serial_interface.read_all()
-        return raw_bytes.decode(self.encoding) if raw_bytes else ""
+    def read_all(self) -> str:
+        """Read everything waiting on the serial port and decode it.
+
+        One `serial.Serial.read_all()` returns at most 4095 bytes (the
+        kernel's tty read buffer), less than the sensor sends per cycle,
+        so this reads until the port is empty.
+        """
+        chunks: List[bytes] = []
+        deadline = time.monotonic() + DRAIN_TIMEOUT_SECONDS
+        while time.monotonic() < deadline:
+            chunk: bytes = self.serial_interface.read_all()
+            if not chunk:
+                break
+            chunks.append(chunk)
+            # give the kernel time to move waiting bytes into its read buffer
+            time.sleep(DRAIN_PAUSE_SECONDS)
+        return b"".join(chunks).decode(self.encoding)
 
 
 class VaisalaWXT532(Sensor):
@@ -58,6 +81,7 @@ class VaisalaWXT532(Sensor):
         self.buffered_messages: List[str] = []
         self.latest_device_status: Optional[
             sensor_types.WindSensorStatus] = None
+        self.last_read_time: Optional[float] = None
 
     def _initialize_sensor(self) -> None:
         """Initialize the wind sensor."""
@@ -68,6 +92,7 @@ class VaisalaWXT532(Sensor):
         self.serial_interface = SerialInterface(
             port=str(self.config.hardware.wxt532_serial_port))
         self.current_input_stream = ""
+        self.last_read_time = None
 
     def _shutdown_sensor(self) -> None:
         """Shutdown the sensor and release resources."""
@@ -85,11 +110,24 @@ class VaisalaWXT532(Sensor):
     ) -> Tuple[Optional[sensor_types.WindSensorData],
                Optional[sensor_types.WindSensorStatus]]:
         """Read the wind sensor data and device status."""
+        now = time.monotonic()
+        if (self.last_read_time is not None
+                and now - self.last_read_time > MAX_READ_GAP_SECONDS):
+            self.logger.info(
+                "Dropping wind messages from a long gap between reads.")
+            self._discard_backlog()
+        self.last_read_time = now
         self._update_buffered_messages()
         wind_measurements = self._extract_measurements_from_messages()
         aggregated_measurement = self._aggregate_measurements(
             wind_measurements)
         return aggregated_measurement, self.latest_device_status
+
+    def _discard_backlog(self) -> None:
+        """Drop all messages that have not been read yet."""
+        self.serial_interface.flush_receiver_stream()
+        self.current_input_stream = ""
+        self.buffered_messages.clear()
 
     def _simulate_read(
         self
