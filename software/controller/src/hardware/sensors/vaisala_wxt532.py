@@ -22,6 +22,11 @@ MEASUREMENT_PATTERN = (
 DEVICE_STATUS_PATTERN = (
     r"Th=([0-9.]+)C,Vh=([0-9.]+)N,Vs=([0-9.]+)V,Vr=([0-9.]+)V")
 
+# Reading the serial port until it is empty: pause between two reads and the
+# longest time one drain may take.
+DRAIN_PAUSE_SECONDS = 0.05
+DRAIN_TIMEOUT_SECONDS = 5.0
+
 
 class SerialInterface:
 
@@ -40,10 +45,26 @@ class SerialInterface:
         time.sleep(0.2)
         self.serial_interface.reset_input_buffer()
 
-    def read_all(self) -> Any:
-        """Read all available data from the serial port and decode it."""
-        raw_bytes = self.serial_interface.read_all()
-        return raw_bytes.decode(self.encoding) if raw_bytes else ""
+    def read_all(self) -> str:
+        """Read everything that has arrived on the serial port and decode it.
+
+        One call to `serial.Serial.read_all()` returns at most 4095 bytes,
+        the size of the kernel's tty read buffer. The sensor sends more than
+        that per measurement cycle, so a single call leaves a backlog that
+        grows until the kernel buffer (about 1.3 MB) is full. Every reading
+        is then about 11.6 hours old. Reading until the port is empty keeps
+        the data current.
+        """
+        chunks: List[bytes] = []
+        deadline = time.monotonic() + DRAIN_TIMEOUT_SECONDS
+        while time.monotonic() < deadline:
+            chunk: bytes = self.serial_interface.read_all()
+            if not chunk:
+                break
+            chunks.append(chunk)
+            # give the kernel time to move waiting bytes into its read buffer
+            time.sleep(DRAIN_PAUSE_SECONDS)
+        return b"".join(chunks).decode(self.encoding)
 
 
 class VaisalaWXT532(Sensor):
