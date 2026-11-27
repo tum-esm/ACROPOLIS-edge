@@ -46,14 +46,11 @@ class SerialInterface:
         self.serial_interface.reset_input_buffer()
 
     def read_all(self) -> str:
-        """Read everything that has arrived on the serial port and decode it.
+        """Read everything waiting on the serial port and decode it.
 
-        One call to `serial.Serial.read_all()` returns at most 4095 bytes,
-        the size of the kernel's tty read buffer. The sensor sends more than
-        that per measurement cycle, so a single call leaves a backlog that
-        grows until the kernel buffer (about 1.3 MB) is full. Every reading
-        is then about 11.6 hours old. Reading until the port is empty keeps
-        the data current.
+        One `serial.Serial.read_all()` returns at most 4095 bytes (the
+        kernel's tty read buffer), less than the sensor sends per cycle,
+        so this reads until the port is empty.
         """
         chunks: List[bytes] = []
         deadline = time.monotonic() + DRAIN_TIMEOUT_SECONDS
