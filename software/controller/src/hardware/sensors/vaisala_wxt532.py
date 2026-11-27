@@ -27,6 +27,11 @@ DEVICE_STATUS_PATTERN = (
 DRAIN_PAUSE_SECONDS = 0.05
 DRAIN_TIMEOUT_SECONDS = 5.0
 
+# Messages are averaged over the time since the previous read, normally one
+# measurement cycle. After a longer gap (for example a calibration) the
+# waiting messages are dropped instead of averaged into one value.
+MAX_READ_GAP_SECONDS = 300.0
+
 
 class SerialInterface:
 
@@ -76,6 +81,7 @@ class VaisalaWXT532(Sensor):
         self.buffered_messages: List[str] = []
         self.latest_device_status: Optional[
             sensor_types.WindSensorStatus] = None
+        self.last_read_time: Optional[float] = None
 
     def _initialize_sensor(self) -> None:
         """Initialize the wind sensor."""
@@ -86,6 +92,7 @@ class VaisalaWXT532(Sensor):
         self.serial_interface = SerialInterface(
             port=str(self.config.hardware.wxt532_serial_port))
         self.current_input_stream = ""
+        self.last_read_time = None
 
     def _shutdown_sensor(self) -> None:
         """Shutdown the sensor and release resources."""
@@ -103,16 +110,21 @@ class VaisalaWXT532(Sensor):
     ) -> Tuple[Optional[sensor_types.WindSensorData],
                Optional[sensor_types.WindSensorStatus]]:
         """Read the wind sensor data and device status."""
+        now = time.monotonic()
+        if (self.last_read_time is not None
+                and now - self.last_read_time > MAX_READ_GAP_SECONDS):
+            self.logger.info(
+                "Dropping wind messages from a long gap between reads.")
+            self._discard_backlog()
+        self.last_read_time = now
         self._update_buffered_messages()
         wind_measurements = self._extract_measurements_from_messages()
         aggregated_measurement = self._aggregate_measurements(
             wind_measurements)
         return aggregated_measurement, self.latest_device_status
 
-    def discard_backlog(self) -> None:
+    def _discard_backlog(self) -> None:
         """Drop all messages that have not been read yet."""
-        if self.simulate:
-            return
         self.serial_interface.flush_receiver_stream()
         self.current_input_stream = ""
         self.buffered_messages.clear()

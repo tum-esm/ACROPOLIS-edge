@@ -34,11 +34,6 @@ class WindSensorModule:
         self._send_wind_sensor_data(wind_sensor_data=wind_sensor_data)
         self._send_wind_sensor_status(wind_sensor_status=wind_sensor_status)
 
-    def discard_wind_sensor_backlog(self) -> None:
-        """Drop wind messages that arrived while nothing was read, so the
-        next measurement only covers the time since this call."""
-        self.wind_sensor.discard_backlog()
-
     def _send_wind_sensor_data(
             self, wind_sensor_data: sensor_types.WindSensorData) -> None:
         # send latest wind measurement info

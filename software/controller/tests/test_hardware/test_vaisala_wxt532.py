@@ -1,10 +1,12 @@
+import re
+import time
+from unittest.mock import MagicMock
+
 import pytest
 
 from hardware.sensors import vaisala_wxt532
 from hardware.sensors.vaisala_wxt532 import (MEASUREMENT_PATTERN,
                                              SerialInterface, VaisalaWXT532)
-
-import re
 
 # the Linux tty read buffer: the most one `serial.Serial.read_all()` returns
 TTY_READ_BUFFER_BYTES = 4095
@@ -77,20 +79,46 @@ def test_read_all_stops_when_the_port_never_runs_empty(
     assert len(received) == fake_serial.reads * TTY_READ_BUFFER_BYTES
 
 
+def sensor_with(fake_serial: FakeSerial) -> VaisalaWXT532:
+    sensor = VaisalaWXT532.__new__(VaisalaWXT532)
+    sensor.logger = MagicMock()
+    sensor.serial_interface = interface_with(fake_serial)
+    sensor.current_input_stream = ""
+    sensor.buffered_messages = []
+    sensor.latest_device_status = None
+    sensor.last_read_time = None
+    return sensor
+
+
 @pytest.mark.github_action
-def test_discard_backlog_drops_unread_and_half_parsed_messages(
+def test_read_after_a_normal_cycle_uses_all_waiting_messages() -> None:
+    sensor = sensor_with(FakeSerial(one_cycle_of_messages().encode("cp1252")))
+    sensor.last_read_time = time.monotonic() - 130
+
+    measurement, status = sensor._read()
+
+    assert measurement is not None and measurement.speed_avg == 1.0
+    assert status is not None
+
+
+@pytest.mark.github_action
+def test_read_after_a_long_gap_drops_the_waiting_messages(
         monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(vaisala_wxt532.time, "sleep", lambda seconds: None)
-    fake_serial = FakeSerial(one_cycle_of_messages().encode("cp1252"))
-    sensor = VaisalaWXT532.__new__(VaisalaWXT532)
-    sensor.simulate = False
-    sensor.serial_interface = interface_with(fake_serial)
+    fake_serial = FakeSerial(one_cycle_of_messages(2280).encode("cp1252"))
+    sensor = sensor_with(fake_serial)
     sensor.current_input_stream = "0R1,Dn=2"
-    sensor.buffered_messages = [WIND_MESSAGE.strip()]
+    sensor.last_read_time = time.monotonic() - 2280
 
-    sensor.discard_backlog()
+    measurement, _ = sensor._read()
 
+    assert measurement is None
     assert fake_serial.waiting == b""
     assert sensor.current_input_stream == ""
-    assert sensor.buffered_messages == []
-    assert sensor.serial_interface.read_all() == ""
+
+
+@pytest.mark.github_action
+def test_first_read_after_start_keeps_the_waiting_messages() -> None:
+    sensor = sensor_with(FakeSerial((WIND_MESSAGE * 20).encode("cp1252")))
+    measurement, _ = sensor._read()
+    assert measurement is not None
